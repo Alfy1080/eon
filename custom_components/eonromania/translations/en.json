@@ -1,0 +1,136 @@
+{
+  "title": "E·ON România",
+
+  "config": {
+    "flow_title": "E·ON România",
+
+    "step": {
+      "user": {
+        "title": "Connect to E·ON Myline account",
+        "description": "Enter your E·ON Myline email and password. Contracts will be discovered automatically.",
+        "data": {
+          "username": "Email address",
+          "password": "Password",
+          "update_interval": "Update interval (seconds)"
+        }
+      },
+
+      "mfa_method": {
+        "title": "Choose verification method",
+        "description": "Your account has two-factor authentication enabled. Choose how you want to receive the verification code.",
+        "data": {
+          "mfa_method": "Verification method"
+        }
+      },
+
+      "mfa": {
+        "title": "Two-Factor Authentication",
+        "description": "A verification code has been sent via {mfa_type} to {mfa_recipient}. Enter the code to continue.",
+        "data": {
+          "code": "Verification code"
+        }
+      },
+
+      "select_contracts": {
+        "title": "Select contracts",
+        "description": "We found contracts in your account. Select the contracts you want to monitor.",
+        "data": {
+          "select_all": "Select all contracts",
+          "selected_contracts": "Available contracts"
+        }
+      }
+    },
+
+    "error": {
+      "auth_failed": "Authentication failed. Please check your email and password.",
+      "no_data": "Authentication was successful, but no contracts were found for this account.",
+      "no_contract_selected": "Please select at least one contract to continue.",
+      "mfa_failed": "The verification code is incorrect or has expired. Please try again.",
+      "mfa_invalid_code": "Please enter the verification code.",
+      "mfa_resend_failed": "Failed to resend the verification code. Please try again."
+    },
+
+    "abort": {
+      "already_configured": "This E·ON account is already configured."
+    }
+  },
+
+  "issues": {
+    "trial_expired": {
+      "title": "Trial expired — E.ON România",
+      "description": "The free trial period has ended.\n\nSensors are disabled until a license is obtained.\n\n[Get a license now]({learn_more_url})"
+    },
+    "license_expired": {
+      "title": "License expired — E.ON România",
+      "description": "The license for this integration has expired.\n\nSensors are disabled until the license is renewed.\n\n[Renew license]({learn_more_url})"
+    }
+  },
+
+  "options": {
+    "flow_title": "E·ON România settings",
+
+    "step": {
+      "init": {
+        "title": "E·ON România Settings",
+        "description": "Select the category to manage",
+        "menu_options": {
+          "settings": "Account Settings",
+          "auto_reload": "Auto-reload Settings"
+        }
+      },
+
+      "settings": {
+        "title": "Account settings",
+        "description": "Update your credentials and refresh interval. After saving, you will be able to reselect contracts.",
+        "data": {
+          "username": "Email address",
+          "password": "Password",
+          "update_interval": "Update interval (seconds)"
+        }
+      },
+
+      "auto_reload": {
+        "title": "Auto-reload Settings",
+        "description": "Configure automatic reload behavior when the integration fails to connect to the E·ON API during startup.",
+        "data": {
+          "auto_reload_on_failure": "Enable auto-reload on failure",
+          "auto_reload_interval": "Auto-reload interval (minutes)"
+        }
+      },
+
+      "mfa_method": {
+        "title": "Choose verification method",
+        "description": "Your account has two-factor authentication enabled. Choose how you want to receive the verification code.",
+        "data": {
+          "mfa_method": "Verification method"
+        }
+      },
+
+      "mfa": {
+        "title": "Two-Factor Authentication",
+        "description": "A verification code has been sent via {mfa_type} to {mfa_recipient}. Enter the code to continue.",
+        "data": {
+          "code": "Verification code"
+        }
+      },
+
+      "select_contracts": {
+        "title": "Change monitored contracts",
+        "description": "Select the contracts you want to monitor. Unselect those you no longer want to track.",
+        "data": {
+          "select_all": "Select all contracts",
+          "selected_contracts": "Available contracts"
+        }
+      }
+    },
+
+    "error": {
+      "auth_failed": "Authentication failed with the provided credentials.",
+      "no_data": "No contracts were found for this account.",
+      "no_contract_selected": "Please select at least one contract.",
+      "mfa_failed": "The verification code is incorrect or has expired.",
+      "mfa_invalid_code": "Please enter the verification code.",
+      "mfa_resend_failed": "Failed to resend the verification code. Please try again."
+    }
+  }
+}
