@@ -343,8 +343,8 @@ Activează debug logging ([DEBUG.md](DEBUG.md)) și caută mesaje legate de lice
 
 [↑ Înapoi la cuprins](#top)
 
-- ⭐ Oferă un **star** pe [GitHub](https://github.com/cnecrea/eonromania/)
-- 🐛 **Raportează probleme** — deschide un [issue](https://github.com/cnecrea/eonromania/issues)
+- ⭐ Oferă un **star** pe [GitHub](https://github.com/Alfy1080/eon/)
+- 🐛 **Raportează probleme** — deschide un [issue](https://github.com/Alfy1080/eon/issues)
 - 🔀 **Contribuie cu cod** — trimite un pull request
-- ☕ **Donează** prin [Buy Me a Coffee](https://buymeacoffee.com/cnecrea)
+- ☕ **Donează** prin [Buy Me a Coffee](https://buymeacoffee.com/Alfy1080)
 - 📢 **Distribuie** proiectul prietenilor sau comunității tale
