@@ -1,13 +1,13 @@
 {
-  "title": "E·ON România",
+  "title": "E-ON Energy",
 
   "config": {
-    "flow_title": "E·ON România",
+    "flow_title": "E-ON Energy",
 
     "step": {
       "user": {
-        "title": "Connect to E·ON Myline account",
-        "description": "Enter your E·ON Myline email and password. Contracts will be discovered automatically.",
+        "title": "Connect to E-ON Myline account",
+        "description": "Enter your E-ON Myline email and password. Contracts will be discovered automatically.",
         "data": {
           "username": "Email address",
           "password": "Password",
@@ -51,27 +51,27 @@
     },
 
     "abort": {
-      "already_configured": "This E·ON account is already configured."
+      "already_configured": "This E-ON Energy account is already configured."
     }
   },
 
   "issues": {
     "trial_expired": {
-      "title": "Trial expired — E.ON România",
+      "title": "Trial expired — E-ON Energy",
       "description": "The free trial period has ended.\n\nSensors are disabled until a license is obtained.\n\n[Get a license now]({learn_more_url})"
     },
     "license_expired": {
-      "title": "License expired — E.ON România",
+      "title": "License expired — E-ON Energy",
       "description": "The license for this integration has expired.\n\nSensors are disabled until the license is renewed.\n\n[Renew license]({learn_more_url})"
     }
   },
 
   "options": {
-    "flow_title": "E·ON România settings",
+    "flow_title": "E-ON Energy settings",
 
     "step": {
       "init": {
-        "title": "E·ON România Settings",
+        "title": "E-ON Energy Settings",
         "description": "Select the category to manage",
         "menu_options": {
           "settings": "Account Settings",
@@ -91,7 +91,7 @@
 
       "auto_reload": {
         "title": "Auto-reload Settings",
-        "description": "Configure automatic reload behavior when the integration fails to connect to the E·ON API during startup.",
+        "description": "Configure automatic reload behavior when the integration fails to connect to the E-ON Energy API during startup.",
         "data": {
           "auto_reload_on_failure": "Enable auto-reload on failure",
           "auto_reload_interval": "Auto-reload interval (minutes)"

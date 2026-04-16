@@ -1,12 +1,12 @@
-# E·ON Energy — Home Assistant Integration
+# E-ON Energy — Home Assistant Integration
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
-A custom integration for [Home Assistant](https://www.home-assistant.io/) that monitors contract data, consumption, and bills through the E·ON Myline API.
+A custom integration for Home Assistant that monitors contract data, consumption, and bills through the E-ON Myline API.
 
 ## Features
 
-* **Multi-contract**: A single E·ON account can monitor multiple billing codes simultaneously.
+* **Multi-contract**: A single E-ON account can monitor multiple billing codes simultaneously.
 * **Full DUO support**: Collective contracts (gas + electricity under a single code) are automatically detected, with separate sensors per subcontract.
 * **MFA Support**: Fully supports Two-Factor Authentication (Email/SMS) during the initial login.
 * **Prosumer Support**: Tracks prosumer invoices and balances (debts and credits).
@@ -20,8 +20,7 @@ Please refer to the Installation and Configuration Guide (SETUP.md) for step-by-
 ## Prerequisites
 
 * Home Assistant 2024.x or newer.
-* Active **E·ON Myline** account (email and password).
-* Valid integration license key.
+* Active **E-ON Myline** account (email and password).
 
 ## Documentation
 

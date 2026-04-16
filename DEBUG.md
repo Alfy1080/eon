@@ -1,4 +1,4 @@
-# Ghid de debugging — E·ON România
+# Ghid de debugging — E-ON Energy
 
 Acest ghid explică cum activezi logarea detaliată, ce mesaje să cauți, și cum interpretezi fiecare situație.
 
@@ -136,8 +136,8 @@ La prima pornire a integrării (sau după restart), ar trebui să vezi:
 INFO  Se configurează integrarea eonromania (entry_id=01ABC...).
 DEBUG Contracte selectate: ['004412345678'], interval=3600s.
 DEBUG [LOGIN] Token obținut cu succes (expires_in=3600).
-DEBUG Începe actualizarea datelor E·ON (contract=004412345678, colectiv=False).
-DEBUG Actualizare E·ON finalizată (contract=004412345678, colectiv=False). Endpointuri fără date: 0/11.
+DEBUG Începe actualizarea datelor E-ON Energy (contract=004412345678, colectiv=False).
+DEBUG Actualizare E-ON Energy finalizată (contract=004412345678, colectiv=False). Endpointuri fără date: 0/11.
 INFO  1 coordinatoare active din 1 contracte selectate (entry_id=01ABC...).
 ```
 

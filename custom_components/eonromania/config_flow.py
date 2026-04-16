@@ -1,5 +1,5 @@
 """
-ConfigFlow și OptionsFlow pentru integrarea E·ON România.
+ConfigFlow și OptionsFlow pentru integrarea E-ON Energy.
 
 Utilizatorul introduce email + parolă, apoi selectează contractele dorite.
 Contractele se descoperă automat prin account-contracts/list.
@@ -315,7 +315,7 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
 
                 return self.async_create_entry(
-                    title=f"E·ON România ({mask_email(self._username)})",
+                    title=f"E-ON Energy ({mask_email(self._username)})",
                     data={
                         "username": self._username,
                         "password": self._password,
@@ -355,7 +355,7 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         Folosit când contul e valid dar nu are niciun contract asociat.
         """
         return self.async_create_entry(
-            title=f"E·ON ({mask_email(self._username)})",
+            title=f"E-ON Energy ({mask_email(self._username)})",
             data={
                 "username": self._username,
                 "password": self._password,

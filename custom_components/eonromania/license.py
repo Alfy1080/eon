@@ -1,5 +1,5 @@
 """
-Modul de licențiere pentru integrarea E·ON România.
+Modul de licențiere pentru integrarea E-ON Energy.
 
 Arhitectură server-side (v3 — multi-integrare, MySQL):
 - Fingerprint = SHA-256(HA UUID + machine-id + salt)
@@ -72,7 +72,7 @@ SERVER_PUBLIC_KEY_PEM = SERVER_PUBLIC_KEYS_PEM[0]
 
 
 class LicenseManager:
-    """Gestionează licența pentru integrarea E·ON România.
+    """Gestionează licența pentru integrarea E-ON Energy.
 
     Toate deciziile de autorizare vin de la server:
     - Trial: serverul decide durata, zilele rămase, expirarea
@@ -198,7 +198,7 @@ class LicenseManager:
         Combinația asigură:
         - HA UUID: unic per instalare HA (se schimbă la reinstalare)
         - machine-id: unic per OS (se schimbă la reinstalare OS)
-        - Salt: face fingerprint-ul specific integrării E·ON România
+        - Salt: face fingerprint-ul specific integrării E-ON Energy
         """
         componente: list[str] = []
 
@@ -305,7 +305,7 @@ class LicenseManager:
                 timeout=aiohttp.ClientTimeout(total=30),
                 headers={
                     "Content-Type": "application/json",
-                    "User-Agent": "EonRomania-HA-Integration/3.0",
+                    "User-Agent": "E-ON-Energy-HA-Integration/3.0",
                 },
             ) as resp:
                 _LOGGER.debug(
@@ -590,7 +590,7 @@ class LicenseManager:
                     timeout=aiohttp.ClientTimeout(total=30),
                     headers={
                         "Content-Type": "application/json",
-                        "User-Agent": "EonRomania-HA-Integration/3.0",
+                        "User-Agent": "E-ON-Energy-HA-Integration/3.0",
                     },
                 ) as resp:
                     result = await resp.json()
@@ -648,7 +648,7 @@ class LicenseManager:
                     timeout=aiohttp.ClientTimeout(total=30),
                     headers={
                         "Content-Type": "application/json",
-                        "User-Agent": "EonRomania-HA-Integration/3.0",
+                        "User-Agent": "E-ON-Energy-HA-Integration/3.0",
                     },
                 ) as resp:
                     _LOGGER.debug(
@@ -770,7 +770,7 @@ class LicenseManager:
                     timeout=aiohttp.ClientTimeout(total=30),
                     headers={
                         "Content-Type": "application/json",
-                        "User-Agent": "EonRomania-HA-Integration/3.0",
+                        "User-Agent": "E-ON-Energy-HA-Integration/3.0",
                     },
                 ) as resp:
                     result = await resp.json()
@@ -835,7 +835,7 @@ class LicenseManager:
                     timeout=aiohttp.ClientTimeout(total=10),
                     headers={
                         "Content-Type": "application/json",
-                        "User-Agent": "EonRomania-HA-Integration/3.0",
+                        "User-Agent": "E-ON-Energy-HA-Integration/3.0",
                     },
                 ) as resp:
                     if resp.status == 200:

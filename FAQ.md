@@ -32,9 +32,9 @@ Ai nevoie de HACS (Home Assistant Community Store) instalat. Dacă nu-l ai, urme
 
 1. În Home Assistant, mergi la **HACS** → cele **trei puncte** din dreapta sus → **Custom repositories**.
 2. Introdu URL-ul: `https://github.com/cnecrea/eonromania` și selectează tipul **Integration**.
-3. Apasă **Add**, apoi caută **E·ON România** în HACS și instalează.
+3. Apasă **Add**, apoi caută **E-ON Energy** în HACS și instalează.
 4. Repornește Home Assistant.
-5. Mergi la **Setări** → **Dispozitive și Servicii** → **Adaugă Integrare** → caută **E·ON România** și urmează pașii de configurare.
+5. Mergi la **Setări** → **Dispozitive și Servicii** → **Adaugă Integrare** → caută **E-ON Energy** și urmează pașii de configurare.
 
 Detalii complete în [SETUP.md](./SETUP.md).
 
@@ -48,7 +48,7 @@ Da. Integrarea detectează automat contractele colective/DUO și le tratează co
 
 Iată cum procedezi:
 
-1. Adaugă integrarea cu email-ul și parola contului E·ON Myline.
+1. Adaugă integrarea cu email-ul și parola contului E-ON Myline.
 2. La pasul 2 (selectare contracte), vei vedea toate contractele cu adresele complete — inclusiv contractul DUO etichetat cu `(Colectiv/DUO)`.
 3. Selectează-l.
 
@@ -83,7 +83,7 @@ Entity ID-urile senzorilor per subcontract folosesc codul subcontractului, nu co
 
 [↑ Înapoi la cuprins](#top)
 
-E ultima valoare citită sau transmisă a contorului — fie de distribuitor, fie de tine (autocitire), fie estimată de E·ON. Termenul e generic și se aplică atât pentru gaz, cât și pentru energie electrică.
+E ultima valoare citită sau transmisă a contorului — fie de distribuitor, fie de tine (autocitire), fie estimată de E-ON Energy. Termenul e generic și se aplică atât pentru gaz, cât și pentru energie electrică.
 
 În integrare, senzorul se numește **„Index gaz"** sau **„Index energie electrică"**, în funcție de tipul contractului detectat automat.
 
@@ -93,7 +93,7 @@ E ultima valoare citită sau transmisă a contorului — fie de distribuitor, fi
 
 [↑ Înapoi la cuprins](#top)
 
-E normal. Indexul curent apare **doar în perioada de citire** (de obicei câteva zile pe lună). Când nu ești în perioada de citire, API-ul E·ON returnează o listă goală de dispozitive, deci integrarea nu are de unde să extragă date.
+E normal. Indexul curent apare **doar în perioada de citire** (de obicei câteva zile pe lună). Când nu ești în perioada de citire, API-ul E-ON Energy returnează o listă goală de dispozitive, deci integrarea nu are de unde să extragă date.
 
 Concret, în afara perioadei de citire, răspunsul API arată cam așa:
 ```json

@@ -1,4 +1,4 @@
-"""Inițializarea integrării E·ON România."""
+"""Inițializarea integrării E-ON Energy."""
 
 import logging
 from datetime import timedelta
@@ -33,7 +33,7 @@ class EonRomaniaRuntimeData:
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
-    """Configurează integrarea globală E·ON România."""
+    """Configurează integrarea globală E-ON Energy."""
     return True
 
 
@@ -263,7 +263,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
                 was_valid = mgr_now.is_valid
                 _LOGGER.debug(
-                    "[E.ON] Cache expirat — verific imediat la server"
+                    "[E-ON Energy] Cache expirat — verific imediat la server"
                 )
                 await mgr_now.async_check_status()
                 now_valid = mgr_now.is_valid
@@ -271,11 +271,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 if was_valid != now_valid:
                     if now_valid:
                         _LOGGER.info(
-                            "[E.ON] Licența a redevenit validă — reîncarc"
+                            "[E-ON Energy] Licența a redevenit validă — reîncarc"
                         )
                     else:
                         _LOGGER.warning(
-                            "[E.ON] Licența a devenit invalidă — reîncarc"
+                            "[E-ON Energy] Licența a devenit invalidă — reîncarc"
                         )
                     _update_license_notifications(hass, mgr_now)
                     await mgr_now._async_reload_entries()
@@ -289,7 +289,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             hass.data[DOMAIN]["_cancel_cache_expiry"] = cancel_expiry
 
             _LOGGER.debug(
-                "[E.ON] Cache expiry timer programat la %s",
+                "[E-ON Energy] Cache expiry timer programat la %s",
                 expiry_dt.isoformat(),
             )
 
@@ -543,7 +543,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
             cancel_ce = hass.data[DOMAIN].pop("_cancel_cache_expiry", None)
             if cancel_ce:
                 cancel_ce()
-                _LOGGER.debug("[E.ON] Cache expiry timer oprit")
+                _LOGGER.debug("[E-ON Energy] Cache expiry timer oprit")
 
             # Elimină LicenseManager
             hass.data[DOMAIN].pop(LICENSE_DATA_KEY, None)
@@ -619,7 +619,7 @@ async def _send_lifecycle_event(
             timeout=aiohttp.ClientTimeout(total=10),
             headers={
                 "Content-Type": "application/json",
-                "User-Agent": "EonRomania-HA-Integration/3.0",
+                "User-Agent": "E-ON-Energy-HA-Integration/3.0",
             },
         ) as resp:
             if resp.status == 200:

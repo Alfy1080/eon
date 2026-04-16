@@ -1,4 +1,4 @@
-"""Platforma Sensor pentru E·ON România."""
+"""Platforma Sensor pentru E-ON Energy."""
 
 import logging
 from collections import defaultdict
@@ -40,7 +40,7 @@ _LOGGER = logging.getLogger(__name__)
 # Clasă de bază
 # ──────────────────────────────────────────────
 class EonRomaniaEntity(CoordinatorEntity[EonRomaniaCoordinator], SensorEntity):
-    """Clasă de bază pentru entitățile E·ON România."""
+    """Clasă de bază pentru entitățile E-ON Energy."""
 
     _attr_has_entity_name = False
 
@@ -71,9 +71,9 @@ class EonRomaniaEntity(CoordinatorEntity[EonRomaniaCoordinator], SensorEntity):
     def device_info(self) -> DeviceInfo:
         return DeviceInfo(
             identifiers={(DOMAIN, self._cod_incasare)},
-            name=f"E·ON România ({self._cod_incasare})",
-            manufacturer="E·ON România Integration",
-            model="E·ON România",
+            name=f"E-ON Energy ({self._cod_incasare})",
+            manufacturer="E-ON Energy Integration",
+            model="E-ON Energy",
             entry_type=DeviceEntryType.SERVICE,
         )
 
@@ -322,7 +322,7 @@ class LicenseRequiredSensor(EonRomaniaEntity):
     def __init__(self, coordinator: EonRomaniaCoordinator, config_entry: ConfigEntry):
         """Initialize the license required sensor."""
         super().__init__(coordinator, config_entry)
-        self._attr_name = "E·ON România"
+        self._attr_name = "E-ON Energy"
         self._attr_unique_id = f"{DOMAIN}_license_{self._cod_incasare}"
 
     @property
@@ -354,7 +354,7 @@ class UserDetailsSensor(CoordinatorEntity[EonRomaniaCoordinator], SensorEntity):
         self._config_entry = config_entry
         username = config_entry.data.get("username", "unknown")
         safe_username = username.replace("@", "_").replace(".", "_")
-        self._attr_name = "E·ON Personal Details"
+        self._attr_name = "E-ON Energy Personal Details"
         self._attr_unique_id = f"{DOMAIN}_user_details_{safe_username}"
         self._custom_entity_id: str | None = f"sensor.{DOMAIN}_{safe_username}_personal_details"
 
@@ -376,9 +376,9 @@ class UserDetailsSensor(CoordinatorEntity[EonRomaniaCoordinator], SensorEntity):
         username = self._config_entry.data.get("username", "unknown")
         return DeviceInfo(
             identifiers={(DOMAIN, f"account_{username}")},
-            name=f"E·ON România ({username})",
-            manufacturer="E·ON România Integration",
-            model="E·ON România — Cont personal",
+            name=f"E-ON Energy ({username})",
+            manufacturer="E-ON Energy Integration",
+            model="E-ON Energy — Cont personal",
             entry_type=DeviceEntryType.SERVICE,
         )
 

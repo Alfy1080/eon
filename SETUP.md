@@ -1,6 +1,6 @@
-# Installation and Configuration Guide — E·ON România
+# Installation and Configuration Guide — E-ON Energy
 
-This guide covers every step of installing and configuring the E·ON România integration for Home Assistant. If anything is unclear, open an issue on GitHub.
+This guide covers every step of installing and configuring the E-ON Energy integration for Home Assistant. If anything is unclear, open an issue on GitHub.
 
 ---
 
@@ -9,7 +9,7 @@ This guide covers every step of installing and configuring the E·ON România in
 Before you begin, make sure you have:
 
 - **Home Assistant** version 2024.x or newer (requires `entry.runtime_data` pattern)
-- **Active E·ON Myline account** — with a working email and password on the E·ON Myline mobile app
+- **Active E-ON Myline account** — with a working email and password on the E-ON Myline mobile app
 - **Valid license** — from licensing-server.com/donate?ref=eonromania
 - **HACS** installed (optional, but recommended) — HACS instructions
 
@@ -28,7 +28,7 @@ Before you begin, make sure you have:
 
 ### Step 2 — Install the integration
 
-1. In HACS, search for "**E·ON România**" or "**E-ON România**"
+1. In HACS, search for "**E-ON Energy**"
 2. Click on the result → **Download** (or **Install**)
 3. Confirm the installation
 
@@ -87,7 +87,7 @@ Same as in Method 1.
 
 1. **Settings** → **Devices & Services**
 2. Click **+ Add Integration** (the blue button, bottom right)
-3. Search for "**E·ON**" — "E·ON România" will appear
+3. Search for "**E-ON Energy**" — "E-ON Energy" will appear
 4. Click on it
 
 ### Step 2 — Fill in the authentication form
@@ -96,20 +96,20 @@ You will see a form with 3 fields:
 
 #### Field 1: Email address
 
-- **What it does**: the email address for your E·ON Myline account
+- **What it does**: the email address for your E-ON Myline account
 - **Format**: valid email (e.g., `user@example.com`)
 - **Note**: it is also the unique identifier for the integration — you cannot add the same email twice
 
 #### Field 2: Password
 
-- **What it does**: the password for your E·ON Myline account
+- **What it does**: the password for your E-ON Myline account
 - **Note**: stored encrypted in the HA database
 
 #### Field 3: Update interval (seconds)
 
 - **What it does**: how often the data is refreshed from the API
 - **Default**: `3600` (1 hour)
-- **Recommendation**: leave it at 3600. E·ON data does not change frequently. Values below 600 seconds are not recommended.
+- **Recommendation**: leave it at 3600. E-ON data does not change frequently. Values below 600 seconds are not recommended.
 
 ### Step 3 — Select contracts
 
@@ -136,7 +136,7 @@ The integration requires a **valid license** to function. Without a license:
 
 To enter the license:
 1. **Settings** → **Devices & Services**
-2. Find **E·ON România** → click on **Configure**
+2. Find **E-ON Energy** → click on **Configure**
 3. Select **License**
 4. Enter the license key
 5. Click **Save**
@@ -158,7 +158,7 @@ The first update takes a few seconds (API query for all endpoints per contract, 
 All settings can be modified from the UI, without deleting and re-adding the integration.
 
 1. **Settings** → **Devices & Services**
-2. Find **E·ON România** → click on **Configure** (⚙️)
+2. Find **E-ON Energy** → click on **Configure** (⚙️)
 3. Fill in the email, password, and interval again
 4. In the next step, you can modify the contract selection
 5. Click **Save**
@@ -248,7 +248,7 @@ Restart HA after adding them. The buttons look for the exact entities `input_num
 
 ```yaml
 type: entities
-title: E·ON România
+title: E-ON Energy
 entities:
   - entity: sensor.eonromania_ro123456789012_contract_data
   - entity: sensor.eonromania_ro123456789012_invoice_balance
@@ -356,8 +356,8 @@ card:
 
 ### Check that the devices exist
 
-1. **Settings** → **Devices & Services** → click on **E·ON România**
-2. You should see one device per selected contract (e.g., "E·ON România (RO123456789012)")
+1. **Settings** → **Devices & Services** → click on **E·ON Energy**
+2. You should see one device per selected contract (e.g., "E-ON Energy (RO123456789012)")
 
 ### Check the sensors
 
@@ -377,12 +377,12 @@ card:
 
 ### Via HACS
 
-1. HACS → find "E·ON România" → **Remove**
+1. HACS → find "E-ON Energy" → **Remove**
 2. Restart Home Assistant
 
 ### Manual
 
-1. **Settings** → **Devices & Services** → E·ON România → **Delete**
+1. **Settings** → **Devices & Services** → E-ON Energy → **Delete**
 2. Delete the `config/custom_components/eonromania/` folder
 3. Restart Home Assistant
 
@@ -392,7 +392,7 @@ card:
 
 - **Replace `RO123456789012`** with your real 12-digit billing code in all the examples above.
 - **Entity IDs are manually set** by the integration based on the billing code and contract type. Consult the reference table at the beginning of the cards section.
-- **Attributes appear only when E·ON provides the data.** If an attribute is not visible, it means the API did not return that information — it is not an error.
+- **Attributes appear only when E-ON Energy provides the data.** If an attribute is not visible, it means the API did not return that information — it is not an error.
 - **Index and reading allowed sensors** show data only during the reading period. Otherwise, they display `0` or `No`.
 - **DUO contracts** generate index and reading allowed sensors per subcontract, with entity IDs based on the subcontract code, not the collective code.
 - If you encounter problems, consult DEBUG.md to enable detailed logging.
