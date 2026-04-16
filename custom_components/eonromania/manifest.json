@@ -1,14 +1,14 @@
 {
   "domain": "eonromania",
-  "name": "E·ON România",
+  "name": "E-ON Energy",
   "codeowners": [
-    "@cnecrea"
+    "@Alfy1080"
   ],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/cnecrea/eonromania",
+  "documentation": "https://github.com/Alfy1080/eon",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/cnecrea/eonromania/issues",
+  "issue_tracker": "https://github.com/Alfy1080/eon/issues",
   "requirements": [
     "cryptography>=41.0.0"
   ],
