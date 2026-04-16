@@ -22,7 +22,7 @@ Before you begin, make sure you have:
 1. Open Home Assistant → sidebar → **HACS**
 2. Click on the 3 dots (⋮) in the top right corner
 3. Select **Custom repositories**
-4. In the "Repository" field, enter: `https://github.com/developer/ha-eon-romania`
+4. In the "Repository" field, enter: `https://github.com/Alfy1080/eon`
 5. In the "Category" field, select: **Integration**
 6. Click **Add**
 

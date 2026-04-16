@@ -31,7 +31,7 @@
 Ai nevoie de HACS (Home Assistant Community Store) instalat. Dacă nu-l ai, urmează [ghidul oficial HACS](https://hacs.xyz/docs/use).
 
 1. În Home Assistant, mergi la **HACS** → cele **trei puncte** din dreapta sus → **Custom repositories**.
-2. Introdu URL-ul: `https://github.com/cnecrea/eonromania` și selectează tipul **Integration**.
+2. Introdu URL-ul: `https://github.com/Alfy1080/eon` și selectează tipul **Integration**.
 3. Apasă **Add**, apoi caută **E-ON Energy** în HACS și instalează.
 4. Repornește Home Assistant.
 5. Mergi la **Setări** → **Dispozitive și Servicii** → **Adaugă Integrare** → caută **E-ON Energy** și urmează pașii de configurare.

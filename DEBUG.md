@@ -320,7 +320,7 @@ Pentru login și refresh, răspunsul complet este logat (include token-ul):
 
 1. Activează debug logging (secțiunea 1)
 2. Reproduce problema
-3. Deschide un [issue pe GitHub](https://github.com/cnecrea/eonromania/issues) cu:
+3. Deschide un [issue pe GitHub](https://github.com/Alfy1080/eon/issues) cu:
    - **Descrierea problemei** — ce ai așteptat vs. ce s-a întâmplat
    - **Logurile relevante** — filtrează după `eonromania` și include 20–50 linii relevante
    - **Versiunea HA** — din **Setări** → **Despre**
