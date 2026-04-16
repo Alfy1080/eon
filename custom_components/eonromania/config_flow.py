@@ -1,9 +1,9 @@
 """
-ConfigFlow și OptionsFlow pentru integrarea E-ON Energy.
+ConfigFlow and OptionsFlow for the E-ON Energy integration.
 
-Utilizatorul introduce email + parolă, apoi selectează contractele dorite.
-Contractele se descoperă automat prin account-contracts/list.
-Suportă MFA (Two-Factor Authentication) — dacă e activ, se cere codul OTP.
+The user enters email + password, then selects the desired contracts.
+Contracts are discovered automatically via account-contracts/list.
+Supports MFA (Two-Factor Authentication) — if enabled, an OTP code is requested.
 """
 
 from __future__ import annotations
@@ -44,13 +44,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # ------------------------------------------------------------------
-# Helper comun: fetch contracte după autentificare reușită
+# Common helper: fetch contracts after successful authentication
 # ------------------------------------------------------------------
 
 async def _fetch_contracts_after_login(api: EonApiClient) -> list[dict] | None:
-    """Obține lista de contracte după autentificare reușită.
+    """Fetch the contracts list after successful authentication.
 
-    Returnează lista de contracte sau None dacă nu s-au găsit.
+    Returns the list of contracts or None if none were found.
     """
     contracts = await api.async_fetch_contracts_list()
     if contracts and isinstance(contracts, list) and len(contracts) > 0:
@@ -59,9 +59,9 @@ async def _fetch_contracts_after_login(api: EonApiClient) -> list[dict] | None:
 
 
 def _store_token(hass, username: str, api: EonApiClient) -> None:
-    """Salvează token-ul API în hass.data pentru a fi preluat de __init__.py.
+    """Save the API token in hass.data for pickup by __init__.py.
 
-    Token-ul este salvat per username (pot exista mai multe conturi).
+    The token is saved per username (multiple accounts may exist).
     """
     token_data = api.export_token_data()
     if token_data is None:
@@ -69,7 +69,7 @@ def _store_token(hass, username: str, api: EonApiClient) -> None:
     store = hass.data.setdefault(DOMAIN_TOKEN_STORE, {})
     store[username.lower()] = token_data
     _LOGGER.debug(
-        "Token salvat în hass.data pentru %s (access=%s...).",
+        "Token saved in hass.data for %s (access=%s...).",
         username,
         token_data["access_token"][:8] if token_data.get("access_token") else "None",
     )
@@ -80,7 +80,7 @@ def _store_token(hass, username: str, api: EonApiClient) -> None:
 # ------------------------------------------------------------------
 
 class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """ConfigFlow — autentificare + MFA (opțional) + selecție contracte."""
+    """ConfigFlow — authentication + MFA (optional) + contract selection."""
 
     VERSION = 3
 
@@ -90,7 +90,7 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._update_interval: int = DEFAULT_UPDATE_INTERVAL
         self._contracts_raw: list[dict] = []
         self._api: EonApiClient | None = None
-        # MFA state — salvat la intrarea în pasul MFA, persistent după async_mfa_complete
+        # MFA state — saved when entering the MFA step, persistent after async_mfa_complete
         self._mfa_type: str = ""
         self._mfa_alt_type: str = ""
         self._mfa_recipient_display: str = ""
@@ -98,7 +98,7 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Pasul 1: Autentificare."""
+        """Step 1: Authentication."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -115,20 +115,20 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._api = EonApiClient(session, self._username, self._password)
 
             if await self._api.async_login():
-                # Login reușit fără MFA — salvăm token-ul și obținem contractele
+                # Login successful without MFA — save token and fetch contracts
                 _store_token(self.hass, self._username, self._api)
                 contracts = await _fetch_contracts_after_login(self._api)
                 if contracts:
                     self._contracts_raw = contracts
                     return await self.async_step_select_contracts()
-                # Nu există contracte — creăm entry fără contracte (doar date personale)
+                # No contracts found — create entry without contracts (personal data only)
                 _LOGGER.info(
-                    "Niciun contract găsit pentru %s. Se creează entry cu date personale.",
+                    "No contracts found for %s. Creating entry with personal data only.",
                     self._username,
                 )
                 return self._create_entry_no_contracts()
             elif self._api.mfa_required:
-                # MFA necesar — salvăm tipul și destinatarul ACUM (înainte de async_mfa_complete care le șterge)
+                # MFA required — save type and recipient NOW (before async_mfa_complete clears them)
                 mfa_info = self._api.mfa_data or {}
                 self._mfa_type = mfa_info.get("type", "EMAIL")
                 self._mfa_alt_type = mfa_info.get("alternative_type", "")
@@ -137,13 +137,13 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 else:
                     self._mfa_recipient_display = mfa_info.get("recipient", "—")
                 _LOGGER.debug(
-                    "MFA necesar pentru %s. Tip=%s, Alt=%s, Destinatar=%s.",
+                    "MFA required for %s. Type=%s, Alt=%s, Recipient=%s.",
                     self._username,
                     self._mfa_type,
                     self._mfa_alt_type,
                     self._mfa_recipient_display,
                 )
-                # Dacă există canal alternativ (telefon setat) → lasă userul să aleagă
+                # If an alternative channel exists (phone set up) → let user choose
                 if self._mfa_alt_type and self._mfa_alt_type != self._mfa_type:
                     return await self.async_step_mfa_method()
                 return await self.async_step_mfa()
@@ -167,10 +167,10 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_mfa_method(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Pasul 1a: Selectare canal MFA (EMAIL sau SMS).
+        """Step 1a: MFA channel selection (EMAIL or SMS).
 
-        Afișat doar dacă contul are și telefon setat (alternative_type disponibil).
-        Dacă userul alege canalul alternativ, retransmitem codul pe noul canal.
+        Shown only if the account has a phone number set (alternative_type available).
+        If the user chooses the alternative channel, the code is resent on the new channel.
         """
         errors: dict[str, str] = {}
 
@@ -178,52 +178,52 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             chosen = user_input.get("mfa_method", self._mfa_type)
 
             if chosen != self._mfa_type:
-                # Userul a ales canalul alternativ → retransmite codul pe noul canal
+                # User chose the alternative channel → resend code on new channel
                 _LOGGER.debug(
-                    "MFA: Userul a ales canalul alternativ %s (implicit era %s). Retransmit codul.",
+                    "MFA: User chose alternative channel %s (default was %s). Resending code.",
                     chosen,
                     self._mfa_type,
                 )
                 if self._api and await self._api.async_mfa_resend(chosen):
                     self._mfa_type = chosen
-                    # Actualizăm recipient-ul din mfa_data (resend poate returna noul recipient)
+                    # Update recipient from mfa_data (resend may return new recipient)
                     mfa_info = self._api.mfa_data or {}
                     if chosen == "EMAIL":
                         self._mfa_recipient_display = mask_email(self._username)
                     else:
                         self._mfa_recipient_display = mfa_info.get("recipient", "—")
                     _LOGGER.debug(
-                        "MFA: Cod retransmis pe %s la %s.",
+                        "MFA: Code resent via %s to %s.",
                         chosen,
                         self._mfa_recipient_display,
                     )
                 else:
                     errors["base"] = "mfa_resend_failed"
-                    _LOGGER.warning("MFA: Retransmitere cod pe %s eșuată.", chosen)
+                    _LOGGER.warning("MFA: Code resend via %s failed.", chosen)
 
             if not errors:
                 return await self.async_step_mfa()
 
-        # Construiește opțiunile de selecție
-        # NOTĂ: mfa_data['recipient'] conține destinatarul metodei IMPLICITE (EMAIL → email mascat).
-        # Numărul de telefon NU e disponibil în răspunsul de login — apare abia după resend pe SMS.
-        # De aceea, pentru metoda alternativă afișăm doar tipul canalului, fără adresă.
+        # Build selection options
+        # NOTE: mfa_data['recipient'] contains the recipient of the DEFAULT method (EMAIL → masked email).
+        # The phone number is NOT available in the login response — it only appears after resending via SMS.
+        # Therefore, for the alternative method we show only the channel type, without an address.
         mfa_info = (self._api.mfa_data or {}) if self._api else {}
 
         def _build_mfa_label(method_type: str, is_current: bool) -> str:
-            """Construiește label-ul pentru o metodă MFA.
+            """Build the label for an MFA method.
 
-            is_current=True: metoda pe care s-a trimis deja codul (avem recipient-ul).
-            is_current=False: metoda alternativă (NU avem recipient-ul real).
+            is_current=True: the method on which the code was already sent (we have the recipient).
+            is_current=False: the alternative method (we do NOT have the real recipient).
             """
             if method_type == "EMAIL":
                 return f"Email ({mask_email(self._username)})"
             # SMS
             if is_current:
-                # Codul a fost deja trimis pe SMS → recipient conține telefonul
-                return f"SMS ({mfa_info.get('recipient', 'telefon')})"
-            # Alternativă SMS — nu avem telefonul încă
-            return "SMS (telefon)"
+                # Code was already sent via SMS → recipient contains the phone number
+                return f"SMS ({mfa_info.get('recipient', 'phone')})"
+            # Alternative SMS — we don't have the phone number yet
+            return "SMS (phone)"
 
         current_label = _build_mfa_label(self._mfa_type, is_current=True)
         alt_label = _build_mfa_label(self._mfa_alt_type, is_current=False)
@@ -254,7 +254,7 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_mfa(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Pasul 1b: Introducere cod MFA (Two-Factor Authentication)."""
+        """Step 1b: Enter MFA code (Two-Factor Authentication)."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -263,22 +263,22 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if not code:
                 errors["base"] = "mfa_invalid_code"
             elif self._api and await self._api.async_mfa_complete(code):
-                # MFA completat — salvăm token-ul și obținem contractele
+                # MFA completed — save token and fetch contracts
                 _store_token(self.hass, self._username, self._api)
                 contracts = await _fetch_contracts_after_login(self._api)
                 if contracts:
                     self._contracts_raw = contracts
                     return await self.async_step_select_contracts()
-                # Nu există contracte — creăm entry fără contracte (doar date personale)
+                # No contracts found — create entry without contracts (personal data only)
                 _LOGGER.info(
-                    "Niciun contract găsit pentru %s (după MFA). Se creează entry cu date personale.",
+                    "No contracts found for %s (after MFA). Creating entry with personal data only.",
                     self._username,
                 )
                 return self._create_entry_no_contracts()
             else:
                 errors["base"] = "mfa_failed"
 
-        # Placeholders din variabilele de instanță (setate la intrarea în MFA, persistente)
+        # Placeholders from instance variables (set when entering MFA, persistent)
         placeholders = {
             "mfa_type": "email" if self._mfa_type == "EMAIL" else "SMS",
             "mfa_recipient": self._mfa_recipient_display or "—",
@@ -300,7 +300,7 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_select_contracts(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Pasul 2: Selectare contracte din listă."""
+        """Step 2: Select contracts from list."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -350,9 +350,9 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     def _create_entry_no_contracts(self) -> ConfigFlowResult:
-        """Creează entry fără contracte (doar senzor date personale).
+        """Create entry without contracts (personal data sensor only).
 
-        Folosit când contul e valid dar nu are niciun contract asociat.
+        Used when the account is valid but has no associated contracts.
         """
         return self.async_create_entry(
             title=f"E-ON Energy ({mask_email(self._username)})",
@@ -364,7 +364,7 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "selected_contracts": [],
                 "contract_metadata": {},
                 "token_data": self._api.export_token_data() if self._api else None,
-                "account_only": True,  # Flag: cont fără contracte
+                "account_only": True,  # Flag: account without contracts
             },
         )
 
@@ -381,7 +381,7 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 # ------------------------------------------------------------------
 
 class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
-    """OptionsFlow — modificare setări + selecție contracte + licență."""
+    """OptionsFlow — modify settings + contract selection + license."""
 
     def __init__(self) -> None:
         self._username: str = ""
@@ -389,7 +389,7 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
         self._update_interval: int = DEFAULT_UPDATE_INTERVAL
         self._contracts_raw: list[dict] = []
         self._api: EonApiClient | None = None
-        # MFA state — salvat la intrarea în pasul MFA, persistent după async_mfa_complete
+        # MFA state — saved when entering the MFA step, persistent after async_mfa_complete
         self._mfa_type: str = ""
         self._mfa_alt_type: str = ""
         self._mfa_recipient_display: str = ""
@@ -399,7 +399,7 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Afișează meniul principal cu opțiunile disponibile."""
+        """Show the main menu with available options."""
         return self.async_show_menu(
             step_id="init",
             menu_options=[
@@ -411,7 +411,7 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
     async def async_step_auto_reload(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Formular pentru setările de reîncărcare automată."""
+        """Form for auto-reload settings."""
         if user_input is not None:
             new_data = dict(self.config_entry.data)
             new_data.update({
@@ -450,7 +450,7 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
     async def async_step_settings(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Pasul 1: Modificare credențiale."""
+        """Step 1: Modify credentials."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -474,9 +474,9 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
                     self._password = password
                     self._update_interval = update_interval
                     return await self.async_step_select_contracts()
-                # Nu există contracte — salvăm ca account_only
+                # No contracts found — save as account_only
                 _LOGGER.info(
-                    "Niciun contract găsit (options) pentru %s. Se salvează ca account_only.",
+                    "No contracts found (options) for %s. Saving as account_only.",
                     username,
                 )
                 new_data = dict(self.config_entry.data)
@@ -496,7 +496,7 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
                 )
                 return self.async_create_entry(title="", data={})
             elif self._api.mfa_required:
-                # MFA necesar — salvăm credențialele + info MFA ACUM
+                # MFA required — save credentials + MFA info NOW
                 self._username = username
                 self._password = password
                 self._update_interval = update_interval
@@ -507,7 +507,7 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
                     self._mfa_recipient_display = mask_email(username)
                 else:
                     self._mfa_recipient_display = mfa_info.get("recipient", "—")
-                # Dacă există canal alternativ (telefon setat) → lasă userul să aleagă
+                # If an alternative channel exists (phone set up) → let user choose
                 if self._mfa_alt_type and self._mfa_alt_type != self._mfa_type:
                     return await self.async_step_mfa_method()
                 return await self.async_step_mfa()
@@ -538,9 +538,9 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
     async def async_step_mfa_method(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Pasul 1a: Selectare canal MFA (EMAIL sau SMS).
+        """Step 1a: MFA channel selection (EMAIL or SMS).
 
-        Afișat doar dacă contul are și telefon setat (alternative_type disponibil).
+        Shown only if the account has a phone number set (alternative_type available).
         """
         errors: dict[str, str] = {}
 
@@ -549,7 +549,7 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
 
             if chosen != self._mfa_type:
                 _LOGGER.debug(
-                    "MFA: Userul a ales canalul alternativ %s (implicit era %s). Retransmit codul.",
+                    "MFA: User chose alternative channel %s (default was %s). Resending code.",
                     chosen,
                     self._mfa_type,
                 )
@@ -566,16 +566,16 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
             if not errors:
                 return await self.async_step_mfa()
 
-        # NOTĂ: mfa_data['recipient'] conține destinatarul metodei IMPLICITE.
-        # Telefonul NU e disponibil în răspunsul de login — apare abia după resend pe SMS.
+        # NOTE: mfa_data['recipient'] contains the recipient of the DEFAULT method.
+        # The phone number is NOT available in the login response — it only appears after resending via SMS.
         mfa_info = (self._api.mfa_data or {}) if self._api else {}
 
         def _build_mfa_label(method_type: str, is_current: bool) -> str:
             if method_type == "EMAIL":
                 return f"Email ({mask_email(self._username)})"
             if is_current:
-                return f"SMS ({mfa_info.get('recipient', 'telefon')})"
-            return "SMS (telefon)"
+                return f"SMS ({mfa_info.get('recipient', 'phone')})"
+            return "SMS (phone)"
 
         current_label = _build_mfa_label(self._mfa_type, is_current=True)
         alt_label = _build_mfa_label(self._mfa_alt_type, is_current=False)
@@ -606,7 +606,7 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
     async def async_step_mfa(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Pasul 1b: Introducere cod MFA."""
+        """Step 1b: Enter MFA code."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -620,9 +620,9 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
                 if contracts:
                     self._contracts_raw = contracts
                     return await self.async_step_select_contracts()
-                # Nu există contracte — salvăm ca account_only
+                # No contracts found — save as account_only
                 _LOGGER.info(
-                    "Niciun contract găsit (options MFA) pentru %s. Se salvează ca account_only.",
+                    "No contracts found (options MFA) for %s. Saving as account_only.",
                     self._username,
                 )
                 new_data = dict(self.config_entry.data)
@@ -644,7 +644,7 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
             else:
                 errors["base"] = "mfa_failed"
 
-        # Placeholders din variabilele de instanță (setate la intrarea în MFA, persistente)
+        # Placeholders from instance variables (set when entering MFA, persistent)
         placeholders = {
             "mfa_type": "email" if self._mfa_type == "EMAIL" else "SMS",
             "mfa_recipient": self._mfa_recipient_display or "—",
@@ -666,7 +666,7 @@ class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
     async def async_step_select_contracts(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Pasul 2: Modificare selecție contracte."""
+        """Step 2: Modify contract selection."""
         errors: dict[str, str] = {}
 
         if user_input is not None:

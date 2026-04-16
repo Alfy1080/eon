@@ -1,12 +1,12 @@
 """
-Diagnosticare pentru integrarea E·ON România.
+Diagnostics for the E-ON Energy integration.
 
-Exportă informații de diagnostic pentru support tickets:
-- Licență (fingerprint, status, cheie mascată)
-- Contracte active și senzori
+Exports diagnostic information for support tickets:
+- License (fingerprint, status, masked key)
+- Active contracts and sensors
 - Starea coordinator-elor
 
-Datele sensibile (parolă, token-uri) sunt excluse.
+Sensitive data (password, tokens) is excluded.
 """
 
 from __future__ import annotations
@@ -23,9 +23,9 @@ async def async_get_config_entry_diagnostics(
     hass: HomeAssistant,
     entry: ConfigEntry,
 ) -> dict[str, Any]:
-    """Returnează datele de diagnostic pentru E·ON România."""
+    """Return diagnostic data for E-ON Energy."""
 
-    # ── Licență (fingerprint + cheie mascată) ──
+    # ── License (fingerprint + masked key) ──
     license_mgr = hass.data.get(DOMAIN, {}).get(LICENSE_DATA_KEY)
     licenta_info: dict[str, Any] = {}
     if license_mgr:
@@ -37,7 +37,7 @@ async def async_get_config_entry_diagnostics(
             "license_type": license_mgr.license_type,
         }
 
-    # ── Contracte și coordinatoare ──
+    # ── Contracts and coordinators ──
     runtime = getattr(entry, "runtime_data", None)
     coordinators_info: dict[str, Any] = {}
     if runtime and hasattr(runtime, "coordinators"):
@@ -54,7 +54,7 @@ async def async_get_config_entry_diagnostics(
         if entitate.entity_id.startswith(f"sensor.{DOMAIN}_")
     )
 
-    # ── Config entry (fără date sensibile) ──
+    # ── Config entry (without sensitive data) ──
     return {
         "intrare": {
             "titlu": entry.title,
@@ -74,7 +74,7 @@ async def async_get_config_entry_diagnostics(
 
 
 def _mascheaza_email(email: str) -> str:
-    """Maschează email-ul păstrând prima literă și domeniul."""
+    """Mask the email keeping the first letter and domain."""
     if not email or "@" not in email:
         return "***"
     local, domain = email.split("@", 1)

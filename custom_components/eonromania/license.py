@@ -1,16 +1,16 @@
 """
-Modul de licențiere pentru integrarea E-ON Energy.
+Licensing module for the E-ON Energy integration.
 
-Arhitectură server-side (v3 — multi-integrare, MySQL):
+Server-side architecture (v3 — multi-integration, MySQL):
 - Fingerprint = SHA-256(HA UUID + machine-id + salt)
 - TOTUL e controlat de server: trial, expirare, intervale
-- Client trimite fingerprint + integration → server returnează token semnat
-- Token-ul serverului conține `valid_until` — cache local expiră automat
-- Câmpul `integration` identifică integrarea (fleet, eonmyline, etc.)
-- Fără constante locale modificabile (trial_days, grace_days etc.)
+- Client sends fingerprint + integration → server returns signed token
+- Server token contains `valid_until` — local cache expires automatically
+- The `integration` field identifies the integration (fleet, eonmyline, etc.)
+- No modifiable local constants (trial_days, grace_days etc.)
 - Activare: trimite {key, fingerprint, timestamp, integration, hmac} la API
-- API returnează token semnat Ed25519 (cheia privată e DOAR pe server)
-- Integrarea verifică semnătura cu cheia publică (embedded)
+- API returns Ed25519 signed token (private key is ONLY on server)
+- Integration verifies signature with public key (embedded)
 """
 
 from __future__ import annotations
@@ -43,53 +43,53 @@ STORAGE_VERSION = 1
 # Salt intern pentru fingerprint (face reverse-engineering mai greu)
 _FP_SALT = "eOn_R0m@n1a_Ha$h_2026!zW"
 
-# Identificator integrare — trimis la server în fiecare request
-# Serverul folosește acest câmp pentru a separa licențele per integrare
+# Integration identifier — sent to server in every request
+# Server uses this field to separate licenses per integration
 INTEGRATION = "eonmyline"
 
 # ─────────────────────────────────────────────
 # Cheile publice Ed25519 ale serverului (SEC-03: suport key rotation)
 # ─────────────────────────────────────────────
-# Lista permite rotația cheilor: adaugă cheia nouă PRIMA în listă,
-# iar la update-ul următor elimină cheia veche.
-# Verificarea încearcă fiecare cheie în ordine — prima care validează câștigă.
-# Cheia privată corespunzătoare rămâne DOAR pe server.
+# List allows key rotation: add new key FIRST in list,
+# and remove old key on next update.
+# Verification tries each key in order — first one that validates wins.
+# The corresponding private key remains ONLY on server.
 SERVER_PUBLIC_KEYS_PEM: list[str] = [
-    # Cheia activă (primară)
+    # Active key (primary)
     """\
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEAUAZIZ1fw+b7qpq9LA47NRbHYhN8kONMxUiJyx5RHrBg=
 -----END PUBLIC KEY-----
 """,
-    # (adaugă aici chei vechi la rotație, șterge-le după ce TOȚI clienții s-au actualizat)
+    # (add old keys here for rotation, remove them after ALL clients have updated)
 ]
 SERVER_PUBLIC_KEY_PEM = SERVER_PUBLIC_KEYS_PEM[0]
 
 
 # ─────────────────────────────────────────────
-# Manager de licențe (v2 — server-side)
+# License manager (v2 — server-side)
 # ─────────────────────────────────────────────
 
 
 class LicenseManager:
-    """Gestionează licența pentru integrarea E-ON Energy.
+    """Manages the license for the E-ON Energy integration.
 
     Toate deciziile de autorizare vin de la server:
-    - Trial: serverul decide durata, zilele rămase, expirarea
-    - Licență: serverul semnează token-ul de activare
-    - Cache: serverul controlează `valid_until` (cât timp e valid local)
-    - Heartbeat: intervalul e dictat de `valid_until`, nu de o constantă locală
+    - Trial: server decides duration, remaining days, expiration
+    - License: server signs the activation token
+    - Cache: server controls `valid_until` (how long it is valid locally)
+    - Heartbeat: interval is dictated by `valid_until`, not a local constant
 
-    Ciclu de viață:
-    1. async_load() — se apelează o singură dată la setup
-    2. async_check_status() — verifică statusul la server (sau folosește cache)
-    3. is_valid — verifică dacă integrarea poate funcționa
-    4. async_activate(key) — activează o cheie de licență
-    5. async_heartbeat() — validare periodică (intervalul vine de la server)
+    Lifecycle:
+    1. async_load() — called once at setup
+    2. async_check_status() — checks status with server (or uses cache)
+    3. is_valid — checks if integration can function
+    4. async_activate(key) — activates a license key
+    5. async_heartbeat() — periodic validation (interval comes from server)
     """
 
     def __init__(self, hass: HomeAssistant) -> None:
-        """Inițializează managerul de licențe."""
+        """Initialize the license manager."""
         self._hass = hass
         self._store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self._data: dict[str, Any] = {}
@@ -102,14 +102,14 @@ class LicenseManager:
 
     @property
     def _session(self) -> aiohttp.ClientSession:
-        """Returnează sesiunea aiohttp partajată din Home Assistant."""
+        """Return the shared aiohttp session from Home Assistant."""
         return async_get_clientsession(self._hass)
 
-    # ─── Încărcare / Salvare ───
+    # ─── Load / Save ───
 
     async def async_load(self) -> None:
-        """Încarcă datele de licență din storage. Se apelează o singură dată."""
-        _LOGGER.debug("[EonRomania:License] Încep async_load()")
+        """Load license data from storage. Called once."""
+        _LOGGER.debug("[EonRomania:License] Starting async_load()")
         try:
             stored = await self._store.async_load()
             self._data = dict(stored) if stored else {}
@@ -137,7 +137,7 @@ class LicenseManager:
             self._hardware_fingerprint[:16],
         )
 
-        # Restaurează status token din cache (dacă există)
+        # Restore status token from cache (if exists)
         self._status_token = self._data.get("status_token", {})
         if self._status_token:
             cached_status = self._status_token.get("status", "?")
@@ -150,7 +150,7 @@ class LicenseManager:
         else:
             _LOGGER.debug("[EonRomania:License] Niciun cache de status — prima rulare")
 
-        # Verifică statusul la server (prima verificare la startup)
+        # Check status with server (first check at startup)
         _LOGGER.debug("[EonRomania:License] Verific statusul la server (startup)...")
         await self.async_check_status()
 
@@ -162,43 +162,43 @@ class LicenseManager:
             self.is_valid,
         )
 
-        # Log-uri explicite pentru fiecare status — vizibile în /logs
+        # Explicit logs for each status — visible in /logs
         if final_status == "licensed":
             key = self._data.get("license_key", "?")
             _LOGGER.info(
-                "[EonRomania:License] ✓ Licență ACTIVĂ (cheie: %s)", key
+                "[EonRomania:License] ✓ License ACTIVE (key: %s)", key
             )
         elif final_status == "trial":
             days = self.trial_days_remaining
             _LOGGER.info(
-                "[EonRomania:License] ⏳ Perioadă de evaluare (trial): "
-                "%d zile rămase", days
+                "[EonRomania:License] ⏳ Evaluation period (trial): "
+                "%d days remaining", days
             )
         elif final_status == "expired":
             _LOGGER.warning(
                 "[EonRomania:License] ✗ EXPIRAT — perioada de evaluare "
-                "sau licența a expirat. Senzorii nu vor funcționa."
+                "or the license has expired. Sensors will not function."
             )
         else:
             _LOGGER.warning(
-                "[EonRomania:License] ✗ FĂRĂ LICENȚĂ (status=%s) — "
-                "senzorii nu vor funcționa.", final_status
+                "[EonRomania:License] ✗ NO LICENSE (status=%s) — "
+                "sensors will not function.", final_status
             )
 
     async def _async_save(self) -> None:
-        """Salvează datele de licență."""
-        _LOGGER.debug("[EonRomania:License] Salvez datele în storage")
+        """Save license data."""
+        _LOGGER.debug("[EonRomania:License] Saving data to storage")
         await self._store.async_save(self._data)
 
     # ─── Fingerprint ───
 
     def _generate_fingerprint(self) -> str:
-        """Generează un fingerprint unic din HA UUID + machine-id.
+        """Generate a unique fingerprint from HA UUID + machine-id.
 
-        Combinația asigură:
-        - HA UUID: unic per instalare HA (se schimbă la reinstalare)
-        - machine-id: unic per OS (se schimbă la reinstalare OS)
-        - Salt: face fingerprint-ul specific integrării E-ON Energy
+        The combination ensures:
+        - HA UUID: unique per HA installation (changes on reinstall)
+        - machine-id: unique per OS (changes on OS reinstall)
+        - Salt: makes the fingerprint specific to the E-ON Energy integration
         """
         componente: list[str] = []
 
@@ -229,11 +229,11 @@ class LicenseManager:
         return hashlib.sha256(raw.encode()).hexdigest()
 
     def _generate_hardware_fingerprint(self) -> str:
-        """Generează un fingerprint hardware care supraviețuiește ștergerii .storage.
+        """Generate a hardware fingerprint that survives .storage deletion.
 
-        Bazat DOAR pe machine-id + salt (FĂRĂ HA UUID).
-        Previne abuzul: ștergere .storage/core.uuid → UUID nou → fingerprint
-        nou → trial gratuit nelimitat. hardware_fingerprint rămâne constant.
+        Based ONLY on machine-id + salt (WITHOUT HA UUID).
+        Prevents abuse: delete .storage/core.uuid → new UUID → new fingerprint
+        → unlimited free trial. hardware_fingerprint remains constant.
         """
         machine_id = ""
         try:
@@ -248,27 +248,27 @@ class LicenseManager:
 
     @property
     def fingerprint(self) -> str:
-        """Returnează fingerprint-ul hardware."""
+        """Return the hardware fingerprint."""
         return self._fingerprint
 
     @property
     def hardware_fingerprint(self) -> str:
-        """Returnează hardware fingerprint-ul (anti-abuse)."""
+        """Return the hardware fingerprint (anti-abuse)."""
         return self._hardware_fingerprint
 
     # ─── Verificare status la server ───
 
     async def async_check_status(self) -> dict[str, Any]:
-        """Verifică statusul la server (/license/v1/check).
+        """Check status with server (/license/v1/check).
 
-        Serverul decide TOTUL: trial activ, zile rămase, interval de cache.
-        Returnează token-ul de status de la server.
+        The server decides EVERYTHING: active trial, remaining days, cache interval.
+        Returns the status token from the server.
 
-        Dacă există un token cached valid (valid_until > now), îl folosește.
+        If a valid cached token exists (valid_until > now), it uses it.
         Altfel, face request la server.
         """
         return {"status": "licensed", "valid_until": time.time() + 315360000}
-        # Verifică cache-ul local
+        # Check local cache
         if self._is_status_cache_valid():
             _LOGGER.debug(
                 "[EonRomania:License] Cache valid — folosesc token existent "
@@ -284,10 +284,10 @@ class LicenseManager:
             LICENSE_API_URL,
         )
 
-        # Resetează flag-ul de retry HMAC (permite un retry pe fiecare check ciclu)
+        # Reset HMAC retry flag (allows one retry per check cycle)
         self._hmac_retry_done = False
 
-        # Trebuie să cerem status de la server
+        # Need to request status from server
         timestamp = int(time.time())
         payload = {
             "fingerprint": self._fingerprint,
@@ -309,48 +309,48 @@ class LicenseManager:
                 },
             ) as resp:
                 _LOGGER.debug(
-                    "[EonRomania:License] Server /check răspuns: HTTP %d",
+                    "[EonRomania:License] Server /check response: HTTP %d",
                     resp.status,
                 )
                 result = await resp.json()
 
                 if resp.status == 200 and "status" in result:
-                    # Verifică semnătura serverului pe token
+                    # Verify server signature pe token
                     if not self._verify_token_signature(result):
                         _LOGGER.warning(
-                            "[EonRomania:License] Semnătura token-ului de status "
-                            "e invalidă — ignor răspunsul"
+                            "[EonRomania:License] Status token signature "
+                            "is invalid — ignoring response"
                         )
                         return self._status_token
 
-                    # Salvează client_secret de la server (SEC-01/02)
-                    # Folosit ca cheie HMAC în loc de fingerprint
+                    # Save client_secret from server (SEC-01/02)
+                    # Used as HMAC key instead of fingerprint
                     cs = result.get("client_secret")
                     if cs:
                         self._data["client_secret"] = cs
-                        # Elimină din status_token (nu trebuie cached în token)
+                        # Remove from status_token (should not be cached in token)
                         result.pop("client_secret", None)
 
-                    # Captează statusul vechi pentru detecție tranziție
+                    # Capture old status for transition detection
                     old_status = (
                         self._status_token.get("status")
                         if self._status_token
                         else None
                     )
 
-                    # Salvează noul status token
+                    # Save new status token
                     self._status_token = result
                     self._data["status_token"] = result
                     self._data["last_server_check"] = time.time()
 
-                    # Sincronizează license_key din răspunsul serverului
-                    # (important: serverul e sursa de adevăr pentru cheie)
+                    # Synchronize license_key from server response
+                    # (important: server is the source of truth for the key)
                     server_key = result.get("license_key")
                     if server_key and self._data.get("license_key") != server_key:
                         self._data["license_key"] = server_key
                         _LOGGER.debug(
                             "[EonRomania:License] license_key sincronizat "
-                            "din răspunsul /check: %s",
+                            "from /check response: %s",
                             server_key,
                         )
 
@@ -364,26 +364,26 @@ class LicenseManager:
                         result.get("valid_until"),
                     )
 
-                    # Log explicit de tranziție (vizibil în /logs)
+                    # Explicit transition log (visible in /logs)
                     if server_status == "expired":
                         _LOGGER.warning(
-                            "[EonRomania:License] Server confirmă: EXPIRAT "
+                            "[EonRomania:License] Server confirms: EXPIRED "
                             "(trial_days_remaining=0)"
                         )
                     elif server_status == "trial":
                         _LOGGER.info(
-                            "[EonRomania:License] Server confirmă: TRIAL "
-                            "(zile rămase: %s)",
+                            "[EonRomania:License] Server confirms: TRIAL "
+                            "(days remaining: %s)",
                             result.get("trial_days_remaining", "?"),
                         )
 
-                    # Auto-reload dacă licența a expirat
+                    # Auto-reload if license expired
                     if (
                         old_status in ("licensed", "trial")
                         and server_status in ("expired", "unlicensed")
                     ):
                         _LOGGER.warning(
-                            "[EonRomania:License] Licență expirată "
+                            "[EonRomania:License] License expired "
                             "(%s → %s) — reload integrare",
                             old_status,
                             server_status,
@@ -397,7 +397,7 @@ class LicenseManager:
                     if self._data.get("client_secret") and not self._hmac_retry_done:
                         _LOGGER.warning(
                             "[EonRomania:License] HMAC invalid — client_secret "
-                            "desincronizat. Șterg secretul local și reîncerc..."
+                            "desynchronized. Deleting local secret and retrying..."
                         )
                         self._data.pop("client_secret", None)
                         await self._async_save()
@@ -405,39 +405,39 @@ class LicenseManager:
                         return await self.async_check_status()  # Retry cu fingerprint
                     _LOGGER.error(
                         "[EonRomania:License] HMAC invalid (retry epuizat). "
-                        "Serverul nu recunoaște acest dispozitiv."
+                        "Server does not recognize this device."
                     )
                 else:
                     _LOGGER.warning(
-                        "[EonRomania:License] răspuns invalid de la /check — %s",
+                        "[EonRomania:License] invalid response from /check — %s",
                         result,
                     )
                 return self._status_token
 
         except aiohttp.ClientError as err:
             _LOGGER.error(
-                "[EonRomania:License] eroare de rețea la verificare status — %s", err
+                "[EonRomania:License] network error during status check — %s", err
             )
             return self._status_token
         except Exception as err:  # noqa: BLE001
             _LOGGER.error(
-                "[EonRomania:License] eroare neașteptată la verificare status — %s", err
+                "[EonRomania:License] unexpected error during status check — %s", err
             )
             return self._status_token
 
     def _is_status_cache_valid(self) -> bool:
-        """Verifică dacă token-ul de status cached e încă valid.
+        """Check if the cached status token is still valid.
 
-        valid_until e setat de server — controlează cât timp
-        clientul poate funcționa fără o nouă verificare.
+        valid_until is set by server — controls how long
+        the client can function without a new verification.
         """
         return True
 
-    # ─── Proprietăți de status (toate derivate din token-ul serverului) ───
+    # ─── Status properties (all derived from server token) ───
 
     @property
     def is_trial_valid(self) -> bool:
-        """Verifică dacă perioada de evaluare e activă (conform server)."""
+        """Check if the evaluation period is active (according to server)."""
         return (
             self._status_token.get("status") == "trial"
             and self._is_status_cache_valid()
@@ -445,43 +445,43 @@ class LicenseManager:
 
     @property
     def trial_days_remaining(self) -> int:
-        """Returnează zilele rămase din trial (de la server)."""
+        """Return remaining trial days (from server)."""
         if self._status_token.get("status") != "trial":
             return 0
         return max(0, int(self._status_token.get("trial_days_remaining", 0)))
 
     @property
     def is_licensed(self) -> bool:
-        """Verifică dacă există o licență activă și validă.
+        """Check if there is an active and valid license.
 
-        Verifică ATÂT token-ul de activare (Ed25519) CÂT ȘI
-        faptul că serverul confirmă statusul 'licensed'.
+        Checks BOTH the activation token (Ed25519) AND
+        that the server confirms the 'licensed' status.
         """
         return True
 
     @property
     def is_valid(self) -> bool:
-        """Verifică dacă integrarea poate funcționa (licență SAU trial).
+        """Check if the integration can function (license OR trial).
 
-        Prioritizează răspunsul serverului — dacă serverul confirmă
-        'licensed' sau 'trial' și cache-ul e valid, e suficient.
-        Asta acoperă scenariul backup/restore: storage local gol,
-        dar serverul recunoaște fingerprint-ul ca licențiat.
+        Prioritizes server response — if server confirms
+        'licensed' or 'trial' and cache is valid, it is sufficient.
+        This covers the backup/restore scenario: empty local storage,
+        but server recognizes the fingerprint as licensed.
         """
         return True
 
     @property
     def license_type(self) -> str | None:
-        """Returnează tipul licenței active: 'perpetual', 'annual' sau None."""
+        """Return the active license type: 'perpetual', 'annual' or None."""
         token = self._data.get("activation_token")
         if token and isinstance(token, dict):
             return token.get("license_type")
-        # Verifică și din status token (pentru trial)
+        # Also check from status token (for trial)
         return self._status_token.get("license_type")
 
     @property
     def license_key_masked(self) -> str | None:
-        """Returnează cheia de licență mascată (ex: EONL-XXXX-****)."""
+        """Return the masked license key (e.g.: EONL-XXXX-****)."""
         key = self._data.get("license_key")
         if not key or len(key) < 10:
             return key
@@ -489,7 +489,7 @@ class LicenseManager:
 
     @property
     def activated_at(self) -> float | None:
-        """Returnează timestamp-ul activării licenței sau None."""
+        """Return the license activation timestamp or None."""
         # 1. Din activation_token (salvat la activare)
         token = self._data.get("activation_token")
         if token and isinstance(token, dict):
@@ -500,14 +500,14 @@ class LicenseManager:
         ts = self._data.get("activated_at")
         if ts:
             return ts
-        # 3. Din status_token (dacă serverul îl trimite)
+        # 3. From status_token (if server sends it)
         if self._status_token:
             return self._status_token.get("activated_at")
         return None
 
     @property
     def license_expires_at(self) -> float | None:
-        """Returnează timestamp-ul de expirare sau None (perpetual)."""
+        """Return the expiration timestamp or None (perpetual)."""
         # 1. Din activation_token (salvat la activare)
         token = self._data.get("activation_token")
         if token and isinstance(token, dict):
@@ -521,28 +521,28 @@ class LicenseManager:
 
     @property
     def status(self) -> str:
-        """Returnează starea curentă a licenței.
+        """Return the current license state.
 
-        Prioritizează răspunsul serverului (din status_token).
+        Prioritizes server response (from status_token).
         Valori posibile: 'licensed', 'trial', 'expired', 'unlicensed'.
         """
         return "licensed"
 
     @property
     def needs_heartbeat(self) -> bool:
-        """Verifică dacă e timpul pentru o verificare la server.
+        """Check if it is time for a server verification.
 
         Intervalul e controlat de server via `valid_until`.
-        Nu mai există constantă locală LICENSE_CHECK_INTERVAL_SEC.
+        No local LICENSE_CHECK_INTERVAL_SEC constant exists anymore.
         """
         return not self._is_status_cache_valid()
 
     @property
     def check_interval_seconds(self) -> int:
-        """Returnează intervalul de verificare (secundele până la valid_until).
+        """Return the check interval (seconds until valid_until).
 
         Folosit de __init__.py pentru a programa heartbeat-ul.
-        Dacă nu avem informație de la server, implicit 4 ore (conservator).
+        If no information from server, default is 4 hours (conservative).
         """
         if not self._status_token:
             return 4 * 3600  # 4 ore implicit (conservative)
@@ -553,7 +553,7 @@ class LicenseManager:
         if remaining <= 0:
             return 300  # 5 minute — trebuie verificat acum
 
-        # Nu depăși 24h chiar dacă serverul zice mai mult
+        # Do not exceed 24h even if server says more
         return min(int(remaining), 24 * 3600)
 
     # ─── Verificare status la server (alias pentru heartbeat) ───
@@ -561,14 +561,14 @@ class LicenseManager:
     async def async_heartbeat(self) -> bool:
         """Trimite un heartbeat de validare la server.
 
-        În v2, heartbeat = async_check_status() + validate (dacă licențiat).
-        Returnează True dacă validarea a reușit.
+        In v2, heartbeat = async_check_status() + validate (if licensed).
+        Returns True if validation succeeded.
         """
         return True
-        # 1. Verifică statusul general
+        # 1. Check general status
         await self.async_check_status()
 
-        # 2. Dacă are licență activă, trimite și validate
+        # 2. If has active license, also send validate
         token = self._data.get("activation_token")
         if not token:
             return self._is_status_cache_valid()
@@ -598,7 +598,7 @@ class LicenseManager:
                     if resp.status == 200 and result.get("valid"):
                         self._data["last_validation"] = time.time()
 
-                        # Dacă serverul trimite un token reînnoit
+                        # If server sends a renewed token
                         new_token = result.get("token")
                         if new_token and self._verify_token_signature(
                             new_token
@@ -615,19 +615,19 @@ class LicenseManager:
                     return False
 
         except Exception:  # noqa: BLE001
-            _LOGGER.debug("[EonRomania:License] heartbeat eșuat (rețea indisponibilă)")
+            _LOGGER.debug("[EonRomania:License] heartbeat failed (network unavailable)")
             return False
 
-    # ─── Activare licență ───
+    # ─── License activation ───
 
     async def async_activate(self, license_key: str) -> dict[str, Any]:
-        """Activează o cheie de licență prin API.
+        """Activate a license key via API.
 
         Trimite: {license_key, fingerprint, timestamp, hmac}
-        Primește: {success, token: {license_key, license_type,
+        Receives: {success, token: {license_key, license_type,
                    fingerprint, activated_at, expires_at, signature}}
 
-        Returnează: {"success": True} sau {"success": False, "error": "..."}
+        Returns: {"success": True} or {"success": False, "error": "..."}
         """
         return {"success": True}
         timestamp = int(time.time())
@@ -652,7 +652,7 @@ class LicenseManager:
                     },
                 ) as resp:
                     _LOGGER.debug(
-                        "[EonRomania:License] /activate răspuns: HTTP %d",
+                        "[EonRomania:License] /activate response: HTTP %d",
                         resp.status,
                     )
 
@@ -663,7 +663,7 @@ class LicenseManager:
                         except Exception:  # noqa: BLE001
                             body = "(nu s-a putut citi)"
                         _LOGGER.warning(
-                            "[EonRomania:License] activare eșuată — "
+                            "[EonRomania:License] activation failed — "
                             "HTTP %d: %s",
                             resp.status,
                             body[:500],
@@ -678,21 +678,21 @@ class LicenseManager:
                     if result.get("success"):
                         token = result.get("token", {})
 
-                        # Verifică semnătura serverului
+                        # Verify server signature
                         if not self._verify_token_signature(token):
                             return {
                                 "success": False,
                                 "error": "invalid_signature",
                             }
 
-                        # Verifică că token-ul e pentru noi
+                        # Verify the token is for us
                         if token.get("fingerprint") != self._fingerprint:
                             return {
                                 "success": False,
                                 "error": "fingerprint_mismatch",
                             }
 
-                        # Salvează token-ul
+                        # Save token
                         self._data["activation_token"] = token
                         self._data["license_key"] = (
                             license_key.strip().upper()
@@ -703,28 +703,28 @@ class LicenseManager:
                         )
                         await self._async_save()
 
-                        # Invalidează cache-ul de status vechi (trial)
-                        # ca async_check_status() să facă request fresh
+                        # Invalidate old status cache (trial)
+                        # so async_check_status() makes a fresh request
                         self._status_token = {}
                         self._data.pop("status_token", None)
 
-                        # Actualizează status-ul de la server (acum va fi 'licensed')
+                        # Update status from server (now it will be 'licensed')
                         await self.async_check_status()
 
                         _LOGGER.info(
-                            "[EonRomania:License] licență activată cu succes (%s)",
+                            "[EonRomania:License] license activated successfully (%s)",
                             token.get("license_type", "necunoscut"),
                         )
 
-                        # Auto-reload: reîncarcă toate entry-urile eonromania
-                        # ca senzorii să se recreeze cu licență validă
+                        # Auto-reload: reload all eonromania entries
+                        # so sensors are recreated with valid license
                         await self._async_reload_entries()
 
                         return {"success": True}
 
                     error = result.get("error", "unknown")
                     _LOGGER.warning(
-                        "[EonRomania:License] activare eșuată — %s (răspuns: %s)",
+                        "[EonRomania:License] activation failed — %s (response: %s)",
                         error,
                         result,
                     )
@@ -732,21 +732,21 @@ class LicenseManager:
 
         except aiohttp.ClientError as err:
             _LOGGER.error(
-                "[EonRomania:License] eroare de rețea la activare — %s", err
+                "[EonRomania:License] network error during activation — %s", err
             )
             return {"success": False, "error": "network_error"}
         except Exception as err:  # noqa: BLE001
             _LOGGER.error(
-                "[EonRomania:License] eroare neașteptată la activare — %s", err
+                "[EonRomania:License] unexpected error during activation — %s", err
             )
             return {"success": False, "error": "unknown_error"}
 
     # ─── Dezactivare ───
 
     async def async_deactivate(self) -> dict[str, Any]:
-        """Dezactivează licența curentă (pentru mutare pe alt server).
+        """Deactivate the current license (for moving to another server).
 
-        Trimite cerere de dezactivare la API, apoi șterge token-ul local.
+        Sends deactivation request to API, then deletes local token.
         """
         return {"success": True}
         token = self._data.get("activation_token")
@@ -776,25 +776,25 @@ class LicenseManager:
                     result = await resp.json()
 
                     if resp.status == 200 and result.get("success"):
-                        # Șterge token-ul local
+                        # Delete local token
                         self._data.pop("activation_token", None)
                         self._data.pop("license_key", None)
                         self._data.pop("last_validation", None)
                         self._data.pop("activated_at", None)
                         await self._async_save()
 
-                        # Invalidează cache-ul de status vechi (licensed)
+                        # Invalidate old status cache (licensed)
                         self._status_token = {}
                         self._data.pop("status_token", None)
 
-                        # Actualizează status-ul de la server
+                        # Update status from server
                         await self.async_check_status()
 
                         _LOGGER.info(
-                            "[EonRomania:License] licență dezactivată cu succes"
+                            "[EonRomania:License] license deactivated successfully"
                         )
 
-                        # Auto-reload: reîncarcă entry-urile
+                        # Auto-reload: reload entries
                         await self._async_reload_entries()
 
                         return {"success": True}
@@ -808,13 +808,13 @@ class LicenseManager:
             _LOGGER.error("[EonRomania:License] eroare la dezactivare — %s", err)
             return {"success": False, "error": "network_error"}
 
-    # ─── Notificări lifecycle (disable / remove) ───
+    # ─── Lifecycle notifications (disable / remove) ───
 
     async def async_notify_event(self, action: str) -> None:
         """Trimite un eveniment de lifecycle la server (fire-and-forget).
 
-        Acțiuni suportate: 'integration_disabled', 'integration_removed'.
-        Nu afectează starea licenței — doar loghează în audit_log.
+        Supported actions: 'integration_disabled', 'integration_removed'.
+        Does not affect license state — only logs in audit_log.
         """
         return None
         timestamp = int(time.time())
@@ -859,17 +859,17 @@ class LicenseManager:
     # ─── Reload entries ───
 
     async def _async_reload_entries(self) -> None:
-        """Reîncarcă toate entry-urile eonromania după activare/dezactivare.
+        """Reload all eonromania entries after activation/deactivation.
 
-        Acest lucru recreează senzorii cu starea corectă de licență,
-        fără ca utilizatorul să fie nevoit să facă reload manual.
+        This recreates sensors with the correct license state,
+        without requiring the user to perform a manual reload.
         """
         entries = self._hass.config_entries.async_entries(DOMAIN)
         if not entries:
             return
 
         _LOGGER.info(
-            "[EonRomania:License] Reîncarc %d entry-uri după schimbarea licenței",
+            "[EonRomania:License] Reloading %d entries after license change",
             len(entries),
         )
         for entry in entries:
@@ -880,13 +880,13 @@ class LicenseManager:
     # ─── Criptografie ───
 
     def _verify_token_signature(self, token: dict[str, Any]) -> bool:
-        """Verifică semnătura Ed25519 a serverului pe un token.
+        """Verify the Ed25519 server signature on a token.
 
-        Token-ul conține diverse câmpuri + 'signature'.
-        Semnătura e calculată pe JSON-ul celorlalte câmpuri (sort_keys).
+        The token contains various fields + 'signature'.
+        The signature is calculated on the JSON of other fields (sort_keys).
 
-        SEC-03: Încearcă toate cheile publice din SERVER_PUBLIC_KEYS_PEM
-        (suport key rotation — prima cheie care validează câștigă).
+        SEC-03: Tries all public keys from SERVER_PUBLIC_KEYS_PEM
+        (key rotation support — first key that validates wins).
         """
         try:
             from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -902,7 +902,7 @@ class LicenseManager:
 
             sig_bytes = bytes.fromhex(signature_hex)
 
-            # Reconstituie datele semnate (fără câmpul signature)
+            # Reconstruct signed data (without signature field)
             signed_data = {
                 k: v for k, v in token.items() if k != "signature"
             }
@@ -919,29 +919,29 @@ class LicenseManager:
                     continue
 
             _LOGGER.warning(
-                "[EonRomania:License] nicio cheie publică nu a validat semnătura"
+                "[EonRomania:License] no public key validated the signature"
             )
             return False
 
         except Exception as err:  # noqa: BLE001
             _LOGGER.debug(
-                "[EonRomania:License] verificare semnătură eșuată — %s", err
+                "[EonRomania:License] signature verification failed — %s", err
             )
             return False
 
     def _compute_request_hmac(self, payload: dict[str, Any]) -> str:
-        """Calculează HMAC-SHA256 pentru integritatea request-ului.
+        """Calculate HMAC-SHA256 for request integrity.
 
         Cheia HMAC = client_secret (de la server, unic per instalare).
-        Fallback pe fingerprint dacă client_secret nu e disponibil încă
-        (prima rulare, înainte de primul /check).
+        Fallback to fingerprint if client_secret is not available yet
+        (first run, before the first /check).
         """
         data = {
             k: v for k, v in payload.items()
             if k not in ("hmac", "hardware_fingerprint")
         }
         msg = json.dumps(data, sort_keys=True).encode()
-        # Folosește client_secret dacă e disponibil (v3.1)
+        # Use client_secret if available (v3.1)
         hmac_key = self._data.get("client_secret") or self._fingerprint
         return hmac_lib.new(
             hmac_key.encode(),
@@ -952,7 +952,7 @@ class LicenseManager:
     # ─── Info (pentru UI / diagnostics) ───
 
     def as_dict(self) -> dict[str, Any]:
-        """Returnează informațiile de licență pentru diagnostics/UI."""
+        """Return license information for diagnostics/UI."""
         return {
             "status": self.status,
             "fingerprint": self._fingerprint[:16] + "...",

@@ -1,10 +1,10 @@
-"""DataUpdateCoordinator pentru integrarea E·ON România.
+"""DataUpdateCoordinator for the E-ON Energy integration.
 
-Strategia de actualizare:
-- Prima actualizare (refresh #0): apelează TOATE endpoint-urile → detectează capabilități
-- Refresh-uri ușoare (light): doar endpoint-uri esențiale (5 calls)
-- Refresh-uri grele (heavy, la fiecare al 4-lea): + endpoint-uri istorice/opționale
-- Capabilitățile se recalibrează la fiecare al 4-lea refresh (~1×/zi la 6h interval)
+Update strategy:
+- First update (refresh #0): calls ALL endpoints → detects capabilities
+- Light refreshes: essential endpoints only (5 calls)
+- Heavy refreshes (every 4th): + historical/optional endpoints
+- Capabilities are recalibrated every 4th refresh (~1/day at 6h interval)
 """
 
 import asyncio
@@ -21,15 +21,15 @@ from .const import DOMAIN, LICENSE_DATA_KEY
 
 _LOGGER = logging.getLogger(__name__)
 
-# Fiecare al N-lea refresh este „greu" (include endpoint-uri istorice/paginate)
-HEAVY_REFRESH_EVERY = 4  # La 6h interval = heavy la fiecare 24h
+# Every Nth refresh is "heavy" (includes historical/paginated endpoints)
+HEAVY_REFRESH_EVERY = 4  # At 6h interval = heavy every 24h
 
-# Limită paginare pentru endpoint-urile paginate (payments, invoices_prosum)
+# Pagination limit for paginated endpoints (payments, invoices_prosum)
 MAX_PAGINATED_PAGES = 3
 
 
 class EonRomaniaCoordinator(DataUpdateCoordinator):
-    """Coordinator care se ocupă de toate datele E·ON România."""
+    """Coordinator that handles all E-ON Energy data."""
 
     def __init__(
         self,
@@ -41,7 +41,7 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
         config_entry: ConfigEntry | None = None,
         account_only: bool = False,
     ):
-        """Inițializează coordinatorul cu parametrii necesari."""
+        """Initialize the coordinator with required parameters."""
         super().__init__(
             hass,
             _LOGGER,
@@ -54,14 +54,14 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
         self.account_only = account_only
         self._config_entry = config_entry
 
-        # Capabilități detectate la prima actualizare
-        # None = nedeterminate (prima actualizare le va seta)
+        # Capabilities detected at first update
+        # None = undetermined (first update will set them)
         self._capabilities: dict[str, bool] | None = None
         self._refresh_counter: int = 0
 
     @property
     def _is_heavy_refresh(self) -> bool:
-        """Determină dacă refresh-ul curent este „greu" (include endpoint-uri istorice)."""
+        """Determine if the current refresh is "heavy" (includes historical endpoints)."""
         return self._refresh_counter % HEAVY_REFRESH_EVERY == 0
 
     def _update_capabilities(
@@ -71,13 +71,13 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
         rescheduling_plans,
         payments,
     ) -> None:
-        """Actualizează capabilitățile pe baza datelor primite."""
-        # Prosum: are date dacă invoices_prosum e non-empty SAU invoice_balance_prosum are sold
+        """Update capabilities based on received data."""
+        # Prosum: has data if invoices_prosum is non-empty OR invoice_balance_prosum has balance
         has_prosum = False
         if invoices_prosum and isinstance(invoices_prosum, list) and len(invoices_prosum) > 0:
             has_prosum = True
         elif invoice_balance_prosum and isinstance(invoice_balance_prosum, dict):
-            # Verifică dacă balance_prosum are date reale (nu doar structura goală)
+            # Check if balance_prosum has real data (not just empty structure)
             balance_val = invoice_balance_prosum.get("totalBalance") or invoice_balance_prosum.get("balance")
             if balance_val is not None and balance_val != 0:
                 has_prosum = True
@@ -97,7 +97,7 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
         }
 
         _LOGGER.info(
-            "[CAPABILITIES] Detectate (contract=%s): prosum=%s, eșalonare=%s, plăți=%s.",
+            "[CAPABILITIES] Detected (contract=%s): prosum=%s, rescheduling=%s, payments=%s.",
             self.cod_incasare,
             has_prosum,
             has_rescheduling,
@@ -106,31 +106,31 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
 
     @property
     def capabilities(self) -> dict[str, bool] | None:
-        """Returnează capabilitățile detectate (None dacă nedeterminate încă)."""
+        """Return detected capabilities (None if not yet determined)."""
         return self._capabilities
 
     def _cap(self, key: str) -> bool:
-        """Verifică o capabilitate. Returnează True dacă nedeterminată (prima dată)."""
+        """Check a capability. Returns True if undetermined (first time)."""
         if self._capabilities is None:
-            return True  # Prima actualizare: apelează tot
+            return True  # First update: call everything
         return self._capabilities.get(key, False)
 
     async def _async_update_data(self) -> dict:
-        """Obține date de la API cu strategie light/heavy.
+        """Fetch data from API with light/heavy strategy.
 
         Light refresh (frecvent): contract_details, invoice_balance, invoices_unpaid,
             meter_index, consumption_convention
         Heavy refresh (rar): + payments, invoices_prosum, invoice_balance_prosum,
             rescheduling_plans, graphic_consumption, meter_history
-        Account-only: doar user-details (fără contracte)
+        Account-only: user-details only (no contracts)
         """
-        # Verificare licență — nu fetchuim date dacă licența/trial nu e validă
+        # License check — do not fetch data if the license/trial is not valid
         license_mgr = self.hass.data.get(DOMAIN, {}).get(LICENSE_DATA_KEY)
         if license_mgr and not license_mgr.is_valid:
-            _LOGGER.debug("[EonRomania] Licență invalidă — se omit apelurile API")
+            _LOGGER.debug("[EonRomania] Invalid license — skipping API calls")
             return self.data or {}
 
-        # ── Mod account_only: doar date personale ──
+        # ── Account-only mode: personal data only ──
         if self.account_only:
             return await self._async_update_data_account_only()
 
@@ -138,29 +138,29 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
         is_heavy = self._is_heavy_refresh
 
         _LOGGER.debug(
-            "Actualizare E·ON (contract=%s, colectiv=%s, refresh=#%s, tip=%s).",
+            "E-ON update (contract=%s, collective=%s, refresh=#%s, type=%s).",
             cod, self.is_collective, self._refresh_counter,
             "HEAVY" if is_heavy else "light",
         )
 
         try:
-            # Asigurăm token valid — refresh_token mai întâi, apoi login complet
-            # _ensure_token_valid() folosește refresh_token (fără MFA!) ca prim pas
+            # Ensure valid token — refresh_token first, then full login
+            # _ensure_token_valid() uses refresh_token (without MFA!) as first step
             if not self.api_client.is_token_likely_valid():
-                # Verificăm dacă login-ul e blocat de MFA
+                # Check if login is blocked by MFA
                 if self.api_client.mfa_blocked:
                     _LOGGER.warning(
-                        "Login blocat — MFA necesar. Reconfigurați integrarea (contract=%s).",
+                        "Login blocked — MFA required. Reconfigure the integration (contract=%s).",
                         cod,
                     )
                     self._create_reauth_notification()
                     raise UpdateFailed(
-                        "Autentificarea necesită MFA. "
-                        "Reconfigurați integrarea din Setări → Dispozitive și servicii → E·ON România."
+                        "Authentication requires MFA. "
+                        "Reconfigure the integration from Settings → Devices & services → E-ON Energy."
                     )
 
                 _LOGGER.debug(
-                    "Token absent sau probabil expirat. Se asigură token valid (contract=%s).",
+                    "Token absent or likely expired. Ensuring valid token (contract=%s).",
                     cod,
                 )
                 ok = await self.api_client.async_ensure_authenticated()
@@ -168,12 +168,12 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
                     if self.api_client.mfa_blocked:
                         self._create_reauth_notification()
                     _LOGGER.warning(
-                        "Autentificare eșuată la API-ul E·ON (contract=%s).", cod
+                        "Authentication failed for E-ON API (contract=%s).", cod
                     )
-                    raise UpdateFailed("Nu s-a putut autentifica la API-ul E·ON.")
+                    raise UpdateFailed("Could not authenticate with E-ON API.")
 
             # ──────────────────────────────────────
-            # Endpoint-uri ESENȚIALE (la fiecare refresh)
+            # ESSENTIAL endpoints (every refresh)
             # ──────────────────────────────────────
             essential_tasks = [
                 self.api_client.async_fetch_contract_details(cod),
@@ -188,7 +188,7 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
             ) = await asyncio.gather(*essential_tasks)
 
             _LOGGER.debug(
-                "Date esențiale (contract=%s): contract_details=%s, invoice_balance=%s, "
+                "Essential data (contract=%s): contract_details=%s, invoice_balance=%s, "
                 "invoices_unpaid=%s (len=%s).",
                 cod,
                 type(contract_details).__name__ if contract_details else None,
@@ -198,8 +198,8 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
             )
 
             # ──────────────────────────────────────
-            # Endpoint-uri GRELE / OPȚIONALE (doar la heavy refresh)
-            # Se reutilizează datele anterioare la light refresh.
+            # HEAVY / OPTIONAL endpoints (heavy refresh only)
+            # Previous data is reused on light refresh.
             # ──────────────────────────────────────
             prev = self.data or {}
 
@@ -207,14 +207,14 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
                 heavy_tasks = []
                 heavy_labels = []
 
-                # Payments — doar dacă are capabilitate sau prima dată
+                # Payments — only if has capability or first time
                 if self._cap("has_payments"):
                     heavy_tasks.append(
                         self.api_client.async_fetch_payments(cod, max_pages=MAX_PAGINATED_PAGES)
                     )
                     heavy_labels.append("payments")
 
-                # Prosum — doar dacă are capabilitate sau prima dată
+                # Prosum — only if has capability or first time
                 if self._cap("has_prosum"):
                     heavy_tasks.append(
                         self.api_client.async_fetch_invoices_prosum(cod, max_pages=MAX_PAGINATED_PAGES)
@@ -225,7 +225,7 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
                     )
                     heavy_labels.append("invoice_balance_prosum")
 
-                # Rescheduling — doar dacă are capabilitate sau prima dată
+                # Rescheduling — only if has capability or first time
                 if self._cap("has_rescheduling"):
                     heavy_tasks.append(
                         self.api_client.async_fetch_rescheduling_plans(cod)
@@ -244,25 +244,25 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
                 rescheduling_plans = heavy_map.get("rescheduling_plans")
 
                 _LOGGER.debug(
-                    "Date grele (contract=%s): %s endpoint-uri apelate (%s).",
+                    "Heavy data (contract=%s): %s endpoints called (%s).",
                     cod, len(heavy_tasks), ", ".join(heavy_labels),
                 )
 
-                # Actualizează capabilitățile (la fiecare heavy refresh)
+                # Update capabilities (on every heavy refresh)
                 self._update_capabilities(
                     invoices_prosum, invoice_balance_prosum,
                     rescheduling_plans, payments,
                 )
 
             else:
-                # Light refresh: reutilizăm datele grele din refresh-ul anterior
+                # Light refresh: reuse heavy data from previous refresh
                 payments = prev.get("payments")
                 invoices_prosum = prev.get("invoices_prosum")
                 invoice_balance_prosum = prev.get("invoice_balance_prosum")
                 rescheduling_plans = prev.get("rescheduling_plans")
 
             # ──────────────────────────────────────
-            # Endpoint-uri specifice tipului de contract
+            # Endpoints specific to contract type
             # ──────────────────────────────────────
             graphic_consumption = None
             meter_index = None
@@ -274,8 +274,8 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
             subcontracts_meter_index = None
 
             if not self.is_collective:
-                # Contract individual: meter_index + consumption_convention la fiecare refresh
-                # graphic_consumption + meter_history doar la heavy
+                # Individual contract: meter_index + consumption_convention on every refresh
+                # graphic_consumption + meter_history only on heavy
                 meter_essential_tasks = [
                     self.api_client.async_fetch_meter_index(cod),
                     self.api_client.async_fetch_consumption_convention(cod),
@@ -300,7 +300,7 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
                     meter_history = prev.get("meter_history")
 
                 _LOGGER.debug(
-                    "Date contor (contract=%s): meter_index=%s, consumption_convention=%s, "
+                    "Meter data (contract=%s): meter_index=%s, consumption_convention=%s, "
                     "graphic_consumption=%s, meter_history=%s.",
                     cod,
                     type(meter_index).__name__ if meter_index else None,
@@ -310,9 +310,9 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
                 )
 
             else:
-                # Contract colectiv/DUO: subcontracte
+                # Collective/DUO contract: subcontracts
                 _LOGGER.debug(
-                    "Contract colectiv/DUO (contract=%s). Se interoghează subcontractele.",
+                    "Collective/DUO contract (contract=%s). Querying subcontracts.",
                     cod,
                 )
                 raw_subs = await self.api_client.async_fetch_contracts_list(
@@ -327,7 +327,7 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
 
                     sub_codes = [s["accountContract"] for s in subcontracts]
                     if sub_codes:
-                        # Esențiale per subcontract: details + convention + meter_index
+                        # Essential per subcontract: details + convention + meter_index
                         detail_tasks = [
                             self.api_client.async_fetch_contract_details(sc)
                             for sc in sub_codes
@@ -366,7 +366,7 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
                         subcontracts_meter_index = subcontracts_meter_index or None
 
                         _LOGGER.debug(
-                            "DUO (contract=%s): %s subcontracte, details=%s, conventions=%s, meter_index=%s.",
+                            "DUO (contract=%s): %s subcontracts, details=%s, conventions=%s, meter_index=%s.",
                             cod, n,
                             len(subcontracts_details) if subcontracts_details else 0,
                             len(subcontracts_conventions) if subcontracts_conventions else 0,
@@ -383,121 +383,121 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
 
         except asyncio.TimeoutError as err:
             _LOGGER.error(
-                "Depășire de timp la actualizarea datelor E·ON (contract=%s): %s.", cod, err
+                "Timeout updating E-ON data (contract=%s): %s.", cod, err
             )
-            raise UpdateFailed("Depășire de timp la actualizarea datelor E·ON.") from err
+            raise UpdateFailed("Timeout updating E-ON data.") from err
 
         except UpdateFailed:
             raise
 
         except Exception as err:
             _LOGGER.exception(
-                "Eroare neașteptată la actualizarea datelor E·ON (contract=%s): %s",
+                "Unexpected error updating E-ON data (contract=%s): %s",
                 cod, err,
             )
-            raise UpdateFailed("Eroare neașteptată la actualizarea datelor E·ON.") from err
+            raise UpdateFailed("Unexpected error updating E-ON data.") from err
 
-        # Verificăm datele esențiale
+        # Verify essential data
         if self.is_collective:
             if contract_details is None:
                 _LOGGER.error(
-                    "Date esențiale indisponibile: contract_details este None (contract colectiv=%s).",
+                    "Essential data unavailable: contract_details is None (collective contract=%s).",
                     cod,
                 )
                 raise UpdateFailed(
-                    "Nu s-au putut obține datele esențiale de la E·ON (contract_details)."
+                    "Could not fetch essential data from E-ON (contract_details)."
                 )
         else:
             if contract_details is None and meter_index is None:
                 _LOGGER.error(
-                    "Date esențiale indisponibile (contract_details + meter_index sunt None) (contract=%s).",
+                    "Essential data unavailable (contract_details + meter_index are None) (contract=%s).",
                     cod,
                 )
                 raise UpdateFailed(
-                    "Nu s-au putut obține datele esențiale de la E·ON (contract_details + meter_index)."
+                    "Could not fetch essential data from E-ON (contract_details + meter_index)."
                 )
 
-        # Detectează unitatea de măsură
+        # Detect unit of measurement
         um = self._detect_unit(graphic_consumption)
 
-        # Incrementăm contorul de refresh
+        # Increment refresh counter
         self._refresh_counter += 1
 
-        # Persistăm token-ul curent în config_entry.data (pentru restart HA)
+        # Persist current token in config_entry.data (for HA restart)
         self._persist_token()
 
-        # Sumar
+        # Summary
         _LOGGER.debug(
-            "Actualizare E·ON finalizată (contract=%s, colectiv=%s, refresh=#%s).",
+            "E-ON update completed (contract=%s, collective=%s, refresh=#%s).",
             cod, self.is_collective, self._refresh_counter - 1,
         )
 
         return {
             # Contract
             "contract_details": contract_details,
-            # Facturi
+            # Invoices
             "invoices_unpaid": invoices_unpaid,
             "invoices_prosum": invoices_prosum,
             "invoice_balance": invoice_balance,
             "invoice_balance_prosum": invoice_balance_prosum,
             "rescheduling_plans": rescheduling_plans,
             "graphic_consumption": graphic_consumption,
-            # Contor
+            # Meter
             "meter_index": meter_index,
             "consumption_convention": consumption_convention,
             "meter_history": meter_history,
-            # Plăți
+            # Payments
             "payments": payments,
-            # Subcontracte (doar pentru contracte colective/DUO)
+            # Subcontracts (only for collective/DUO contracts)
             "subcontracts": subcontracts,
             "subcontracts_details": subcontracts_details,
             "subcontracts_conventions": subcontracts_conventions,
             "subcontracts_meter_index": subcontracts_meter_index,
-            # Metadate
+            # Metadata
             "um": um,
             "is_collective": self.is_collective,
         }
 
     async def _async_update_data_account_only(self) -> dict:
-        """Actualizare simplificată: doar user-details (conturi fără contracte)."""
+        """Simplified update: user-details only (accounts without contracts)."""
         _LOGGER.debug(
-            "Actualizare E·ON account_only (refresh=#%s).",
+            "E-ON account_only update (refresh=#%s).",
             self._refresh_counter,
         )
 
         try:
-            # Asigurăm token valid
+            # Ensure valid token
             if not self.api_client.is_token_likely_valid():
                 if self.api_client.mfa_blocked:
-                    _LOGGER.warning("Login blocat — MFA necesar (account_only).")
+                    _LOGGER.warning("Login blocked — MFA required (account_only).")
                     self._create_reauth_notification()
                     raise UpdateFailed(
-                        "Autentificarea necesită MFA. "
-                        "Reconfigurați integrarea din Setări → Dispozitive și servicii → E·ON România."
+                        "Authentication requires MFA. "
+                        "Reconfigure the integration from Settings → Devices & services → E-ON Energy."
                     )
 
                 ok = await self.api_client.async_ensure_authenticated()
                 if not ok:
                     if self.api_client.mfa_blocked:
                         self._create_reauth_notification()
-                    raise UpdateFailed("Nu s-a putut autentifica la API-ul E·ON.")
+                    raise UpdateFailed("Could not authenticate with E-ON API.")
 
             user_details = await self.api_client.async_fetch_user_details()
 
         except UpdateFailed:
             raise
         except Exception as err:
-            _LOGGER.exception("Eroare la actualizare account_only: %s", err)
-            raise UpdateFailed("Eroare la obținerea datelor personale.") from err
+            _LOGGER.exception("Error updating account_only: %s", err)
+            raise UpdateFailed("Error fetching personal data.") from err
 
         if not user_details or not isinstance(user_details, dict):
-            raise UpdateFailed("Nu s-au putut obține datele personale (user-details).")
+            raise UpdateFailed("Could not fetch personal data (user-details).")
 
         self._refresh_counter += 1
         self._persist_token()
 
         _LOGGER.debug(
-            "Actualizare account_only finalizată (refresh=#%s, user=%s).",
+            "Account_only update completed (refresh=#%s, user=%s).",
             self._refresh_counter - 1,
             user_details.get("email", "N/A"),
         )
@@ -508,10 +508,10 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
         }
 
     def _persist_token(self) -> None:
-        """Persistă token-ul curent în config_entry.data pentru restart HA.
+        """Persist current token in config_entry.data for HA restart.
 
-        Salvează refresh_token + access_token astfel încât la restart
-        coordinatorul poate folosi refresh_token fără a necesita MFA.
+        Saves refresh_token + access_token so that on restart
+        the coordinator can use refresh_token without requiring MFA.
         """
         if self._config_entry is None:
             return
@@ -522,7 +522,7 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
         current_data = dict(self._config_entry.data)
         old_token = current_data.get("token_data", {})
 
-        # Actualizăm doar dacă s-a schimbat ceva (evităm scrieri inutile)
+        # Only update if something changed (avoid unnecessary writes)
         if (
             old_token.get("access_token") == token_data.get("access_token")
             and old_token.get("refresh_token") == token_data.get("refresh_token")
@@ -534,37 +534,37 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
             self._config_entry, data=current_data
         )
         _LOGGER.debug(
-            "Token persistat în config_entry (contract=%s, access=%s...).",
+            "Token persisted in config_entry (contract=%s, access=%s...).",
             self.cod_incasare,
             token_data["access_token"][:8] if token_data.get("access_token") else "None",
         )
 
     def _create_reauth_notification(self) -> None:
-        """Creează o notificare persistentă care cere reconfigurare MFA."""
+        """Create a persistent notification requesting MFA reconfiguration."""
         from homeassistant.components import persistent_notification
 
         notification_id = f"eonromania_reauth_{self.cod_incasare}"
         persistent_notification.async_create(
             self.hass,
             message=(
-                f"Sesiunea E·ON pentru contractul **{self.cod_incasare}** a expirat "
-                f"și este necesară re-autentificarea cu cod MFA.\n\n"
-                f"Mergeți la **Setări → Dispozitive și servicii → E·ON România → "
-                f"Reconfigurare** pentru a vă re-autentifica.\n\n"
-                f"Până la reconfigurare, integrarea NU va mai încerca login "
-                f"(pentru a evita trimiterea repetată de email-uri MFA)."
+                f"The E-ON session for contract **{self.cod_incasare}** has expired "
+                f"and re-authentication with MFA code is required.\n\n"
+                f"Go to **Settings → Devices & services → E-ON Energy → "
+                f"Reconfigure** to re-authenticate.\n\n"
+                f"Until reconfiguration, the integration will NOT attempt login "
+                f"(to avoid sending repeated MFA emails)."
             ),
-            title="E·ON România — Autentificare necesară",
+            title="E-ON Energy — Authentication required",
             notification_id=notification_id,
         )
         _LOGGER.info(
-            "Notificare persistentă creată: reconfigurare necesară (contract=%s).",
+            "Persistent notification created: reconfiguration required (contract=%s).",
             self.cod_incasare,
         )
 
     @staticmethod
     def _detect_unit(graphic_consumption_data) -> str:
-        """Detectează unitatea de măsură: m3 (gaz) sau kWh (electricitate)."""
+        """Detect unit of measurement: m3 (gas) or kWh (electricity)."""
         if not graphic_consumption_data or not isinstance(graphic_consumption_data, dict):
             return "m3"
         um_raw = graphic_consumption_data.get("um")

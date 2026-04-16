@@ -1,4 +1,4 @@
-"""Client API pentru comunicarea cu E·ON România."""
+"""API client for communication with E-ON Energy."""
 
 import asyncio
 import logging
@@ -42,7 +42,7 @@ _DEBUG = _LOGGER.isEnabledFor(logging.DEBUG)
 
 
 def _safe_debug_sample(data, max_len: int = 500) -> str:
-    """Returnează un sample JSON sigur pentru logging (fără serializare inutilă)."""
+    """Return a safe JSON sample for logging (without unnecessary serialization)."""
     if data is None:
         return "None"
     try:
@@ -52,10 +52,10 @@ def _safe_debug_sample(data, max_len: int = 500) -> str:
 
 
 class EonApiClient:
-    """Clasă pentru comunicarea cu API-ul E·ON România."""
+    """Class for communicating with the E-ON Energy API."""
 
     def __init__(self, session: ClientSession, username: str, password: str):
-        """Inițializează clientul API cu o sesiune de tip ClientSession."""
+        """Initialize the API client with a ClientSession."""
         self._session = session
         self._username = username
         self._password = password
@@ -73,70 +73,70 @@ class EonApiClient:
         self._auth_lock = asyncio.Lock()
         self._token_generation: int = 0
 
-        # MFA state (setat de async_login când MFA e necesar)
+        # MFA state (set by async_login when MFA is required)
         self._mfa_data: dict | None = None
 
         # ── MFA guard ──
-        # Când login-ul cere MFA în background (nu în config_flow),
-        # blocăm orice re-încercare de login pentru a preveni:
-        # 1. Flood de email-uri MFA la fiecare ciclu de update
-        # 2. Login-uri paralele când mai multe request-uri primesc 401 simultan
-        # Se resetează la inject_token() (după reconfigurare prin UI)
+        # When login requires MFA in background (not in config_flow),
+        # we block any login retry to prevent:
+        # 1. Flood of MFA emails on every update cycle
+        # 2. Parallel logins when multiple requests receive 401 simultaneously
+        # Reset on inject_token() (after reconfiguration via UI)
         self._mfa_blocked: bool = False
 
     # ──────────────────────────────────────────
-    # Proprietăți publice
+    # Public properties
     # ──────────────────────────────────────────
 
     @property
     def has_token(self) -> bool:
-        """Verifică dacă există un token setat (nu garantează validitatea)."""
+        """Check if a token is set (does not guarantee validity)."""
         return self._access_token is not None
 
     @property
     def uuid(self) -> str | None:
-        """Returnează UUID-ul utilizatorului autentificat."""
+        """Return the UUID of the authenticated user."""
         return self._uuid
 
     @property
     def mfa_required(self) -> bool:
-        """Verifică dacă login-ul a returnat cerință MFA (2FA)."""
+        """Check if login returned an MFA requirement (2FA)."""
         return self._mfa_data is not None
 
     @property
     def mfa_data(self) -> dict | None:
-        """Returnează datele MFA (uuid, type, recipient, etc.) sau None."""
+        """Return MFA data (uuid, type, recipient, etc.) or None."""
         return self._mfa_data
 
     @property
     def mfa_blocked(self) -> bool:
-        """True dacă login-ul e blocat din cauza MFA necesar în background."""
+        """True if login is blocked due to MFA required in background."""
         return self._mfa_blocked
 
     def clear_mfa_block(self) -> None:
-        """Resetează blocajul MFA (apelat după reconfigurare prin UI)."""
+        """Reset MFA block (called after reconfiguration via UI)."""
         self._mfa_blocked = False
         self._mfa_data = None
-        _LOGGER.debug("[AUTH] Blocaj MFA resetat.")
+        _LOGGER.debug("[AUTH] MFA block reset.")
 
     def is_token_likely_valid(self) -> bool:
-        """Verifică dacă tokenul există ȘI nu a depășit durata maximă estimată."""
+        """Check if token exists AND has not exceeded the estimated maximum duration."""
         if self._access_token is None:
             return False
         age = time.monotonic() - self._token_obtained_at
-        # Folosim expires_in din răspunsul API, cu fallback pe TOKEN_MAX_AGE
+        # Use expires_in from API response, with fallback to TOKEN_MAX_AGE
         effective_max = self._expires_in - TOKEN_REFRESH_THRESHOLD if self._expires_in > TOKEN_REFRESH_THRESHOLD else TOKEN_MAX_AGE
         return age < effective_max
 
     def export_token_data(self) -> dict | None:
-        """Exportă datele de token pentru a fi reinjectate în altă instanță.
+        """Export token data to be re-injected in another instance.
 
-        Folosit de config_flow pentru a salva token-ul după autentificare MFA,
-        astfel încât __init__.py să-l poată injecta în API client-ul coordinatorului.
+        Used by config_flow to save the token after MFA authentication,
+        so that __init__.py can inject it into the coordinator API client.
 
-        Salvează și timestamp-ul real (wall clock) al obținerii token-ului,
-        astfel încât inject_token() să poată calcula corect vârsta token-ului
-        chiar și după restart HA (time.monotonic() se resetează la reboot).
+        Also saves the real timestamp (wall clock) of when the token was obtained,
+        so that inject_token() can correctly calculate the token age
+        even after HA restart (time.monotonic() resets on reboot).
         """
         if self._access_token is None:
             return None
@@ -151,14 +151,14 @@ class EonApiClient:
         }
 
     def inject_token(self, token_data: dict) -> None:
-        """Injectează un token existent (obținut anterior, ex. din config_flow).
+        """Inject an existing token (previously obtained, e.g. from config_flow).
 
-        Calculează vârsta reală a token-ului folosind obtained_at_wallclock
-        (wall clock salvat la export). Dacă token-ul e clar expirat,
-        is_token_likely_valid() va returna False imediat → se va face
-        refresh_token direct, fără a pierde un request cu 401.
+        Calculates the real age of the token using obtained_at_wallclock
+        (wall clock saved at export). If the token is clearly expired,
+        is_token_likely_valid() will return False immediately → will do
+        refresh_token directly, without wasting a request on 401.
 
-        Resetează blocajul MFA (tokenul nou vine din reconfigurare prin UI).
+        Resets MFA block (new token comes from reconfiguration via UI).
         """
         self._access_token = token_data.get("access_token")
         self._token_type = token_data.get("token_type", "Bearer")
@@ -167,57 +167,57 @@ class EonApiClient:
         self._id_token = token_data.get("id_token")
         self._uuid = token_data.get("uuid")
 
-        # Calculăm vârsta reală a token-ului
+        # Calculate the real age of the token
         wallclock_obtained = token_data.get("obtained_at_wallclock")
         if wallclock_obtained:
-            # Cât timp a trecut de când a fost obținut token-ul (secunde reale)
+            # How long has passed since the token was obtained (real seconds)
             age_seconds = time.time() - wallclock_obtained
             if age_seconds < 0:
-                age_seconds = 0  # Ceas dezordonat — tratăm ca proaspăt
-            # Setăm _token_obtained_at în trecut cu atât cât e vârsta reală
+                age_seconds = 0  # Disordered clock — treat as fresh
+            # Set _token_obtained_at in the past by the real age
             self._token_obtained_at = time.monotonic() - age_seconds
             _LOGGER.debug(
-                "Token injectat cu vârstă reală: %.0fs (expires_in=%s).",
+                "Token injected with real age: %.0fs (expires_in=%s).",
                 age_seconds, self._expires_in,
             )
         else:
-            # Fără wallclock (format vechi) — forțăm refresh imediat
-            # Setăm token_obtained_at la 0 → is_token_likely_valid() returnează False
-            # → _ensure_token_valid() va încerca refresh_token (fără MFA!)
+            # No wallclock (old format) — force immediate refresh
+            # Set token_obtained_at to 0 → is_token_likely_valid() returns False
+            # → _ensure_token_valid() will try refresh_token (without MFA!)
             self._token_obtained_at = 0.0
             _LOGGER.debug(
-                "Token injectat fără wallclock (format vechi) — se va face refresh la prima cerere.",
+                "Token injected without wallclock (old format) — will refresh on first request.",
             )
 
         self._token_generation += 1
-        # Resetăm blocajul MFA — token-ul nou vine din config_flow cu MFA completat
+        # Reset MFA block — new token comes from config_flow with MFA completed
         self._mfa_blocked = False
         self._mfa_data = None
         _LOGGER.debug(
             "Token injectat (access=%s..., refresh=%s, gen=%s, valid=%s).",
             f"***({len(self._access_token)}ch)" if self._access_token else "None",
-            "da" if self._refresh_token else "nu",
+            "yes" if self._refresh_token else "no",
             self._token_generation,
             self.is_token_likely_valid(),
         )
 
     # ──────────────────────────────────────────
-    # Autentificare
+    # Authentication
     # ──────────────────────────────────────────
 
     async def async_login(self) -> bool:
-        """Obține un token nou de autentificare prin mobile-login.
+        """Obtain a new authentication token via mobile-login.
 
-        Returnează True dacă tokenul a fost obținut cu succes.
-        Returnează False dacă autentificarea a eșuat SAU dacă MFA e necesar.
+        Returns True if the token was obtained successfully.
+        Returns False if authentication failed OR if MFA is required.
 
-        Când MFA e necesar (HTTP 400, code 6054):
-        - Stochează datele MFA în self._mfa_data
-        - Returnează False (nu avem token încă)
-        - Config flow verifică self.mfa_required și afișează formularul MFA
-        - Coordinator (runtime) va ridica UpdateFailed — MFA nu poate fi gestionat automat
+        When MFA is required (HTTP 400, code 6054):
+        - Stores MFA data in self._mfa_data
+        - Returns False (no token yet)
+        - Config flow checks self.mfa_required and shows MFA form
+        - Coordinator (runtime) will raise UpdateFailed — MFA cannot be handled automatically
         """
-        self._mfa_data = None  # Reset MFA state la fiecare încercare de login
+        self._mfa_data = None  # Reset MFA state on every login attempt
 
         verify = generate_verify_hmac(self._username, AUTH_VERIFY_SECRET)
         payload = {
@@ -226,28 +226,28 @@ class EonApiClient:
             "verify": verify,
         }
 
-        _LOGGER.debug("[LOGIN] Trimitere cerere: URL=%s, user=%s", URL_LOGIN, self._username)
+        _LOGGER.debug("[LOGIN] Sending request: URL=%s, user=%s", URL_LOGIN, self._username)
 
         try:
             async with self._session.post(
                 URL_LOGIN, json=payload, headers=HEADERS, timeout=self._timeout
             ) as resp:
                 response_text = await resp.text()
-                _LOGGER.debug("[LOGIN] Răspuns: Status=%s", resp.status)
+                _LOGGER.debug("[LOGIN] Response: Status=%s", resp.status)
 
                 if resp.status == 200:
                     data = json.loads(response_text)
                     if _LOGGER.isEnabledFor(logging.DEBUG):
                         _LOGGER.debug(
-                            "[LOGIN] Date primite: type=%s, keys=%s",
+                            "[LOGIN] Data received: type=%s, keys=%s",
                             type(data).__name__,
                             list(data.keys()) if isinstance(data, dict) else "N/A",
                         )
                     self._apply_token_data(data)
-                    _LOGGER.debug("[LOGIN] Token obținut cu succes (expires_in=%s).", self._expires_in)
+                    _LOGGER.debug("[LOGIN] Token obtained successfully (expires_in=%s).", self._expires_in)
                     return True
 
-                # ── MFA necesar: HTTP 400 cu code "6054" ──
+                # ── MFA required: HTTP 400 with code "6054" ──
                 if resp.status == 400:
                     try:
                         data = json.loads(response_text)
@@ -263,15 +263,15 @@ class EonApiClient:
                             "validity": data.get("secondFactorValidity", 60),
                         }
                         _LOGGER.warning(
-                            "[LOGIN] MFA necesar (2FA activ). Tip=%s, Destinatar=%s, Valabilitate=%ss.",
+                            "[LOGIN] MFA required (2FA active). Type=%s, Recipient=%s, Validity=%ss.",
                             self._mfa_data["type"],
                             self._mfa_data["recipient"],
                             self._mfa_data["validity"],
                         )
-                        return False  # Nu avem token, dar MFA e disponibil
+                        return False  # No token, but MFA is available
 
                 _LOGGER.error(
-                    "[LOGIN] Eroare autentificare. Cod HTTP=%s, Răspuns=%s",
+                    "[LOGIN] Authentication error. HTTP code=%s, Response=%s",
                     resp.status,
                     response_text,
                 )
@@ -279,22 +279,22 @@ class EonApiClient:
                 return False
 
         except asyncio.TimeoutError:
-            _LOGGER.error("[LOGIN] Depășire de timp.")
+            _LOGGER.error("[LOGIN] Timeout.")
             self._invalidate_tokens()
             return False
         except Exception as e:
-            _LOGGER.error("[LOGIN] Eroare: %s", e)
+            _LOGGER.error("[LOGIN] Error: %s", e)
             self._invalidate_tokens()
             return False
 
     async def async_mfa_complete(self, code: str) -> bool:
-        """Finalizează autentificarea MFA cu codul OTP primit.
+        """Complete MFA authentication with the received OTP code.
 
-        Trimite codul la second-factor-auth/mobile-login.
-        Returnează True dacă tokenul a fost obținut.
+        Sends the code to second-factor-auth/mobile-login.
+        Returns True if the token was obtained.
         """
         if not self._mfa_data or not self._mfa_data.get("uuid"):
-            _LOGGER.error("[MFA] Nu există sesiune MFA activă (uuid lipsă).")
+            _LOGGER.error("[MFA] No active MFA session (uuid missing).")
             return False
 
         payload = {
@@ -304,49 +304,49 @@ class EonApiClient:
             "type": None,
         }
 
-        _LOGGER.debug("[MFA] Completare login 2FA: URL=%s", URL_MFA_LOGIN)
+        _LOGGER.debug("[MFA] Completing 2FA login: URL=%s", URL_MFA_LOGIN)
 
         try:
             async with self._session.post(
                 URL_MFA_LOGIN, json=payload, headers=HEADERS, timeout=self._timeout
             ) as resp:
                 response_text = await resp.text()
-                _LOGGER.debug("[MFA] Răspuns: Status=%s", resp.status)
+                _LOGGER.debug("[MFA] Response: Status=%s", resp.status)
 
                 if resp.status == 200:
                     data = json.loads(response_text)
                     access_token = data.get("access_token")
                     if access_token:
                         self._apply_token_data(data)
-                        self._mfa_data = None  # MFA completat cu succes
-                        _LOGGER.debug("[MFA] Login 2FA reușit (expires_in=%s).", self._expires_in)
+                        self._mfa_data = None  # MFA completed successfully
+                        _LOGGER.debug("[MFA] 2FA login successful (expires_in=%s).", self._expires_in)
                         return True
 
                 _LOGGER.error(
-                    "[MFA] Autentificare 2FA eșuată. Cod HTTP=%s, Răspuns=%s",
+                    "[MFA] 2FA authentication failed. HTTP code=%s, Response=%s",
                     resp.status,
                     response_text,
                 )
                 return False
 
         except asyncio.TimeoutError:
-            _LOGGER.error("[MFA] Depășire de timp.")
+            _LOGGER.error("[MFA] Timeout.")
             return False
         except Exception as e:
-            _LOGGER.error("[MFA] Eroare: %s", e)
+            _LOGGER.error("[MFA] Error: %s", e)
             return False
 
     async def async_mfa_resend(self, mfa_type: str | None = None) -> bool:
-        """Retransmite codul MFA pe canalul specificat.
+        """Resend the MFA code on the specified channel.
 
         Args:
-            mfa_type: "SMS" sau "EMAIL". Dacă None, folosește tipul curent.
+            mfa_type: "SMS" or "EMAIL". If None, uses the current type.
 
-        Returnează True dacă codul a fost retransmis cu succes.
-        Actualizează UUID-ul sesiunii MFA dacă serverul returnează unul nou.
+        Returns True if the code was resent successfully.
+        Updates the MFA session UUID if the server returns a new one.
         """
         if not self._mfa_data or not self._mfa_data.get("uuid"):
-            _LOGGER.error("[MFA-RESEND] Nu există sesiune MFA activă.")
+            _LOGGER.error("[MFA-RESEND] No active MFA session.")
             return False
 
         send_type = mfa_type or self._mfa_data.get("type", "EMAIL")
@@ -359,88 +359,88 @@ class EonApiClient:
             "recipient": None,
         }
 
-        _LOGGER.debug("[MFA-RESEND] Retransmitere cod (%s): URL=%s", send_type, URL_MFA_RESEND)
+        _LOGGER.debug("[MFA-RESEND] Resending code (%s): URL=%s", send_type, URL_MFA_RESEND)
 
         try:
             async with self._session.post(
                 URL_MFA_RESEND, json=payload, headers=HEADERS, timeout=self._timeout
             ) as resp:
                 response_text = await resp.text()
-                _LOGGER.debug("[MFA-RESEND] Răspuns: Status=%s, Body=%s", resp.status, response_text)
+                _LOGGER.debug("[MFA-RESEND] Response: Status=%s, Body=%s", resp.status, response_text)
 
                 if resp.status == 200:
                     try:
                         data = json.loads(response_text)
                     except (json.JSONDecodeError, ValueError):
                         data = {}
-                    # Actualizează UUID-ul dacă serverul trimite unul nou
+                    # Update UUID if server sends a new one
                     new_uuid = data.get("uuid")
                     if new_uuid:
                         self._mfa_data["uuid"] = new_uuid
                     new_recipient = data.get("recipient")
                     if new_recipient:
                         self._mfa_data["recipient"] = new_recipient
-                    _LOGGER.debug("[MFA-RESEND] Cod retransmis cu succes (%s).", send_type)
+                    _LOGGER.debug("[MFA-RESEND] Code resent successfully (%s).", send_type)
                     return True
 
                 _LOGGER.error(
-                    "[MFA-RESEND] Retransmitere eșuată. Cod HTTP=%s, Răspuns=%s",
+                    "[MFA-RESEND] Resend failed. HTTP code=%s, Response=%s",
                     resp.status,
                     response_text,
                 )
                 return False
 
         except asyncio.TimeoutError:
-            _LOGGER.error("[MFA-RESEND] Depășire de timp.")
+            _LOGGER.error("[MFA-RESEND] Timeout.")
             return False
         except Exception as e:
-            _LOGGER.error("[MFA-RESEND] Eroare: %s", e)
+            _LOGGER.error("[MFA-RESEND] Error: %s", e)
             return False
 
     async def async_refresh_token(self) -> bool:
-        """Reîmprospătează tokenul de acces folosind refresh_token (fără lock — se apelează din _ensure_token_valid)."""
+        """Refresh the access token using refresh_token (without lock — called from _ensure_token_valid)."""
         if not self._refresh_token:
-            _LOGGER.debug("[REFRESH] Nu există refresh_token. Se va face login complet.")
+            _LOGGER.debug("[REFRESH] No refresh_token available. Will perform full login.")
             return False
 
         payload = {"refreshToken": self._refresh_token}
 
-        _LOGGER.debug("[REFRESH] Trimitere cerere: URL=%s", URL_REFRESH_TOKEN)
+        _LOGGER.debug("[REFRESH] Sending request: URL=%s", URL_REFRESH_TOKEN)
 
         try:
             async with self._session.post(
                 URL_REFRESH_TOKEN, json=payload, headers=HEADERS, timeout=self._timeout
             ) as resp:
-                _LOGGER.debug("[REFRESH] Răspuns: Status=%s", resp.status)
+                _LOGGER.debug("[REFRESH] Response: Status=%s", resp.status)
 
                 if resp.status == 200:
                     data = await resp.json()
                     if _LOGGER.isEnabledFor(logging.DEBUG):
                         _LOGGER.debug(
-                            "[REFRESH] Date primite: type=%s, keys=%s",
+                            "[REFRESH] Data received: type=%s, keys=%s",
                             type(data).__name__,
                             list(data.keys()) if isinstance(data, dict) else "N/A",
                         )
                     self._apply_token_data(data)
-                    _LOGGER.debug("[REFRESH] Token reîmprospătat cu succes (expires_in=%s).", self._expires_in)
+                    _LOGGER.debug("[REFRESH] Token refreshed successfully (expires_in=%s).", self._expires_in)
                     return True
 
                 _LOGGER.warning(
-                    "[REFRESH] Eroare la reîmprospătare. Cod HTTP=%s, Răspuns=%s",
+                    "[REFRESH] Refresh error. HTTP code=%s, Response=%s",
                     resp.status,
                     response_text,
                 )
                 return False
 
         except asyncio.TimeoutError:
-            _LOGGER.error("[REFRESH] Depășire de timp.")
+            _LOGGER.error("[REFRESH] Timeout.")
             return False
         except Exception as e:
-            _LOGGER.error("[REFRESH] Eroare: %s", e)
+            _LOGGER.error("[REFRESH] Error: %s", e)
             return False
 
     def _apply_token_data(self, data: dict) -> None:
-        """Aplică datele de token din răspunsul API (login sau refresh)."""
+        """Apply token data from API response (login or refresh)."""
         self._access_token = data.get("access_token")
         self._token_type = data.get("token_type", "Bearer")
         self._expires_in = data.get("expires_in", 3600)
@@ -451,12 +451,12 @@ class EonApiClient:
         self._token_generation += 1
 
     def invalidate_token(self) -> None:
-        """Invalidează tokenul curent (pentru a forța re-autentificare)."""
+        """Invalidate the current token (to force re-authentication)."""
         self._access_token = None
         self._token_obtained_at = 0.0
 
     def _invalidate_tokens(self) -> None:
-        """Invalidează toate tokenurile (acces + refresh)."""
+        """Invalidate all tokens (access + refresh)."""
         self._access_token = None
         self._refresh_token = None
         self._id_token = None
@@ -464,74 +464,74 @@ class EonApiClient:
         self._token_obtained_at = 0.0
 
     async def async_ensure_authenticated(self) -> bool:
-        """Metodă publică pentru asigurarea autentificării (STAB-01).
+        """Public method for ensuring authentication (STAB-01).
 
-        Wrapper public pentru _ensure_token_valid — folosit de coordinator
-        în loc de apelul direct la metoda privată.
+        Public wrapper for _ensure_token_valid — used by coordinator
+        instead of direct call to the private method.
         """
         return await self._ensure_token_valid()
 
     async def _ensure_token_valid(self) -> bool:
         """
-        Asigură că există un token valid — refresh sau login complet.
+        Ensure a valid token exists — refresh or full login.
 
-        Thread-safe: folosește _auth_lock pentru a preveni refresh-uri/login-uri
-        concurente. Când mai multe request-uri paralele au nevoie de token nou,
-        doar primul face refresh/login, restul reutilizează rezultatul.
+        Thread-safe: uses _auth_lock to prevent concurrent refresh/login
+        operations. When multiple parallel requests need a new token,
+        only the first does refresh/login, the rest reuse the result.
 
-        Dacă MFA a fost detectat anterior în background (nu în config_flow),
-        nu mai încearcă login-ul — returnează False imediat. Asta previne
-        flood-ul de email-uri MFA și login-uri repetate.
+        If MFA was previously detected in background (not in config_flow),
+        login is no longer attempted — returns False immediately. This prevents
+        MFA email flooding and repeated logins.
         """
-        # Fast path fără lock: token deja valid
+        # Fast path without lock: token already valid
         if self.is_token_likely_valid():
             return True
 
-        # Guard: dacă MFA e blocat, nu mai încercăm nimic
+        # Guard: if MFA is blocked, do not try anything
         if self._mfa_blocked:
-            _LOGGER.debug("[AUTH] Login blocat — MFA necesar. Reconfigurați integrarea din UI.")
+            _LOGGER.debug("[AUTH] Login blocked — MFA required. Reconfigure integration from UI.")
             return False
 
         async with self._auth_lock:
-            # Double-check după ce am obținut lock-ul:
-            # alt apel concurent poate fi deja reînnoit tokenul
+            # Double-check after obtaining the lock:
+            # another concurrent call may have already renewed the token
             if self.is_token_likely_valid():
-                _LOGGER.debug("[AUTH] Token deja disponibil (obținut de alt apel concurent).")
+                _LOGGER.debug("[AUTH] Token already available (obtained by another concurrent call).")
                 return True
 
-            # Double-check MFA block (alt caller l-a setat între timp)
+            # Double-check MFA block (another caller set it in the meantime)
             if self._mfa_blocked:
-                _LOGGER.debug("[AUTH] Login blocat de alt apel concurent — MFA necesar.")
+                _LOGGER.debug("[AUTH] Login blocked by another concurrent call — MFA required.")
                 return False
 
-            # Încearcă refresh dacă avem refresh_token
+            # Try refresh if we have refresh_token
             if self._refresh_token:
                 if await self.async_refresh_token():
                     return True
-                _LOGGER.debug("[AUTH] Refresh token eșuat. Se încearcă login complet.")
+                _LOGGER.debug("[AUTH] Refresh token failed. Attempting full login.")
 
-            # Fallback la login complet
+            # Fallback to full login
             self._invalidate_tokens()
             result = await self.async_login()
 
-            # Dacă login-ul a cerut MFA, blocăm orice încercare viitoare
-            # până la reconfigurare prin UI (inject_token va reseta blocajul)
+            # If login required MFA, block any future attempt
+            # until reconfiguration via UI (inject_token will reset the block)
             if not result and self._mfa_data is not None:
                 self._mfa_blocked = True
                 _LOGGER.error(
                     "[AUTH] ══════════════════════════════════════════════════════════════"
                 )
                 _LOGGER.error(
-                    "[AUTH] MFA NECESAR — Login-ul automat nu poate continua."
+                    "[AUTH] MFA REQUIRED — Automatic login cannot continue."
                 )
                 _LOGGER.error(
-                    "[AUTH] Reconfigurați integrarea E·ON România din:"
+                    "[AUTH] Reconfigure the E-ON Energy integration from:"
                 )
                 _LOGGER.error(
-                    "[AUTH]   Setări → Dispozitive și servicii → E·ON România → Reconfigurare"
+                    "[AUTH]   Settings → Devices & services → E-ON Energy → Reconfigure"
                 )
                 _LOGGER.error(
-                    "[AUTH] NU se vor mai trimite email-uri MFA până la reconfigurare."
+                    "[AUTH] No more MFA emails will be sent until reconfiguration."
                 )
                 _LOGGER.error(
                     "[AUTH] ══════════════════════════════════════════════════════════════"
@@ -540,29 +540,29 @@ class EonApiClient:
             return result
 
     # ──────────────────────────────────────────
-    # Date utilizator
+    # User data
     # ──────────────────────────────────────────
 
     async def async_fetch_user_details(self):
-        """Obține datele personale ale utilizatorului autentificat (user-details)."""
+        """Fetch authenticated user personal data (user-details)."""
         result = await self._request_with_token(
             method="GET",
             url=URL_USER_DETAILS,
             label="user_details",
         )
         _LOGGER.debug(
-            "[user_details] Date primite: type=%s, keys=%s",
+            "[user_details] Data received: type=%s, keys=%s",
             type(result).__name__,
             list(result.keys()) if isinstance(result, dict) else "N/A",
         )
         return result
 
     # ──────────────────────────────────────────
-    # Contracte
+    # Contracts
     # ──────────────────────────────────────────
 
     async def async_fetch_contracts_list(self, partner_code: str | None = None, collective_contract: str | None = None, limit: int | None = None):
-        """Obține lista contractelor pentru un partener."""
+        """Fetch the contracts list for a partner."""
         params = {}
         if partner_code:
             params["partnerCode"] = partner_code
@@ -579,9 +579,9 @@ class EonApiClient:
             url=url,
             label="contracts_list",
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[contracts_list] Date primite: type=%s, len=%s, sample keys=%s, sample content=%s",
+            "[contracts_list] Data received: type=%s, len=%s, sample keys=%s, sample content=%s",
             type(result).__name__,
             len(result) if isinstance(result, (list, dict)) else "N/A",
             list(result[0].keys()) if isinstance(result, list) and result else list(result.keys()) if isinstance(result, dict) else "N/A",
@@ -590,7 +590,7 @@ class EonApiClient:
         return result
 
     async def async_fetch_contract_details(self, account_contract: str, include_meter_reading: bool = True):
-        """Obține detaliile unui contract specific."""
+        """Fetch details for a specific contract."""
         url = URL_CONTRACT_DETAILS.format(accountContract=account_contract)
         if include_meter_reading:
             url = f"{url}?includeMeterReading=true"
@@ -599,9 +599,9 @@ class EonApiClient:
             url=url,
             label=f"contract_details ({account_contract})",
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[contract_details %s] Date primite: type=%s, keys=%s, sample=%s",
+            "[contract_details %s] Data received: type=%s, keys=%s, sample=%s",
             account_contract,
             type(result).__name__,
             list(result.keys()) if isinstance(result, dict) else "N/A",
@@ -610,13 +610,13 @@ class EonApiClient:
         return result
 
     async def async_fetch_contracts_with_subcontracts(self, account_contract: str | None = None):
-        """Obține lista contractelor cu subcontracte (pentru contracte colective/DUO).
+        """Fetch contracts list with subcontracts (for collective/DUO contracts).
 
-        Apelează FĂRĂ parametru (returnează toate contractele cu subcontracte
-        ale utilizatorului autentificat). Dacă e specificat account_contract,
-        rezultatele sunt filtrate local ulterior.
+        Calls WITHOUT parameter (returns all contracts with subcontracts
+        of the authenticated user). If account_contract is specified,
+        results are filtered locally afterwards.
         """
-        # Apelăm fără filtru — API-ul returnează toate contractele cu subcontracte
+        # Call without filter — API returns all contracts with subcontracts
         url = URL_CONTRACTS_WITH_SUBCONTRACTS
         label = f"contracts_with_subcontracts ({account_contract or 'all'})"
         _LOGGER.debug("[%s] URL complet: %s", label, url)
@@ -625,9 +625,9 @@ class EonApiClient:
             url=url,
             label=label,
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[%s] Date primite: type=%s, len=%s, sample keys=%s, sample content=%s",
+            "[%s] Data received: type=%s, len=%s, sample keys=%s, sample content=%s",
             label,
             type(result).__name__,
             len(result) if isinstance(result, (list, dict)) else "N/A",
@@ -637,9 +637,9 @@ class EonApiClient:
         return result
 
     async def async_fetch_contracts_details_list(self, account_contracts: list[str]):
-        """Obține detaliile mai multor contracte simultan (subcontracte DUO).
+        """Fetch details for multiple contracts simultaneously (DUO subcontracts).
 
-        Request body: ContractDetailsRequest — obiect cu accountContracts[] + includeMeterReading.
+        Request body: ContractDetailsRequest — object with accountContracts[] + includeMeterReading.
         Response: List<ElectronicInvoiceStatusResponse>
         """
         if not account_contracts:
@@ -654,9 +654,9 @@ class EonApiClient:
             payload=payload,
             label=label,
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[%s] Date primite: type=%s, len=%s, sample keys=%s, sample content=%s",
+            "[%s] Data received: type=%s, len=%s, sample keys=%s, sample content=%s",
             label,
             type(result).__name__,
             len(result) if isinstance(result, (list, dict)) else "N/A",
@@ -666,11 +666,11 @@ class EonApiClient:
         return result
 
     # ──────────────────────────────────────────
-    # Facturi & Plăți
+    # Invoices & Payments
     # ──────────────────────────────────────────
 
     async def async_fetch_invoices_unpaid(self, account_contract: str, include_subcontracts: bool = False):
-        """Obține facturile neachitate."""
+        """Fetch unpaid invoices."""
         params = f"?accountContract={account_contract}&status=unpaid"
         if include_subcontracts:
             params += "&includeSubcontracts=true"
@@ -679,9 +679,9 @@ class EonApiClient:
             url=f"{URL_INVOICES_UNPAID}{params}",
             label=f"invoices_unpaid ({account_contract})",
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[invoices_unpaid %s] Date primite: type=%s, len=%s, sample keys=%s, sample content=%s",
+            "[invoices_unpaid %s] Data received: type=%s, len=%s, sample keys=%s, sample content=%s",
             account_contract,
             type(result).__name__,
             len(result) if isinstance(result, (list, dict)) else "N/A",
@@ -691,7 +691,7 @@ class EonApiClient:
         return result
 
     async def async_fetch_invoices_prosum(self, account_contract: str, max_pages: int | None = None):
-        """Obține facturile de prosumator (paginate)."""
+        """Fetch prosumer invoices (paginated)."""
         result = await self._paginated_request(
             base_url=URL_INVOICES_PROSUM,
             params={"accountContract": account_contract},
@@ -699,9 +699,9 @@ class EonApiClient:
             label=f"invoices_prosum ({account_contract})",
             max_pages=max_pages,
         )
-        # Debug clar pentru datele cumulate
+        # Clear debug for accumulated data
         _LOGGER.debug(
-            "[invoices_prosum %s] Date cumulate: type=%s, len=%s, sample keys=%s, sample content=%s",
+            "[invoices_prosum %s] Data accumulated: type=%s, len=%s, sample keys=%s, sample content=%s",
             account_contract,
             type(result).__name__,
             len(result) if isinstance(result, list) else "N/A",
@@ -711,7 +711,7 @@ class EonApiClient:
         return result
 
     async def async_fetch_invoice_balance(self, account_contract: str, include_subcontracts: bool = False):
-        """Obține soldul facturii."""
+        """Fetch invoice balance."""
         params = f"?accountContract={account_contract}"
         if include_subcontracts:
             params += "&includeSubcontracts=true"
@@ -720,9 +720,9 @@ class EonApiClient:
             url=f"{URL_INVOICE_BALANCE}{params}",
             label=f"invoice_balance ({account_contract})",
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[invoice_balance %s] Date primite: type=%s, keys=%s, sample=%s",
+            "[invoice_balance %s] Data received: type=%s, keys=%s, sample=%s",
             account_contract,
             type(result).__name__,
             list(result.keys()) if isinstance(result, dict) else "N/A",
@@ -731,7 +731,7 @@ class EonApiClient:
         return result
 
     async def async_fetch_invoice_balance_prosum(self, account_contract: str, include_subcontracts: bool = False):
-        """Obține soldul facturii de prosumator."""
+        """Fetch prosumer invoice balance."""
         params = f"?accountContract={account_contract}"
         if include_subcontracts:
             params += "&includeSubcontracts=true"
@@ -740,9 +740,9 @@ class EonApiClient:
             url=f"{URL_INVOICE_BALANCE_PROSUM}{params}",
             label=f"invoice_balance_prosum ({account_contract})",
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[invoice_balance_prosum %s] Date primite: type=%s, keys=%s, sample=%s",
+            "[invoice_balance_prosum %s] Data received: type=%s, keys=%s, sample=%s",
             account_contract,
             type(result).__name__,
             list(result.keys()) if isinstance(result, dict) else "N/A",
@@ -751,7 +751,7 @@ class EonApiClient:
         return result
 
     async def async_fetch_payments(self, account_contract: str, max_pages: int | None = None):
-        """Obține înregistrările de plăți (paginate)."""
+        """Fetch payment records (paginated)."""
         result = await self._paginated_request(
             base_url=URL_PAYMENT_LIST,
             params={"accountContract": account_contract},
@@ -759,9 +759,9 @@ class EonApiClient:
             label=f"payments ({account_contract})",
             max_pages=max_pages,
         )
-        # Debug clar pentru datele cumulate
+        # Clear debug for accumulated data
         _LOGGER.debug(
-            "[payments %s] Date cumulate: type=%s, len=%s, sample keys=%s, sample content=%s",
+            "[payments %s] Data accumulated: type=%s, len=%s, sample keys=%s, sample content=%s",
             account_contract,
             type(result).__name__,
             len(result) if isinstance(result, list) else "N/A",
@@ -771,7 +771,7 @@ class EonApiClient:
         return result
 
     async def async_fetch_rescheduling_plans(self, account_contract: str, include_subcontracts: bool = False, status: str | None = None):
-        """Obține planurile de eșalonare."""
+        """Fetch rescheduling plans."""
         params = f"?accountContract={account_contract}"
         if include_subcontracts:
             params += "&includeSubcontracts=true"
@@ -782,9 +782,9 @@ class EonApiClient:
             url=f"{URL_RESCHEDULING_PLANS}{params}",
             label=f"rescheduling_plans ({account_contract})",
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[rescheduling_plans %s] Date primite: type=%s, len=%s, sample keys=%s, sample content=%s",
+            "[rescheduling_plans %s] Data received: type=%s, len=%s, sample keys=%s, sample content=%s",
             account_contract,
             type(result).__name__,
             len(result) if isinstance(result, (list, dict)) else "N/A",
@@ -794,16 +794,16 @@ class EonApiClient:
         return result
 
     async def async_fetch_graphic_consumption(self, account_contract: str):
-        """Obține graficul consumului facturat."""
+        """Fetch billed consumption chart data."""
         url = URL_GRAPHIC_CONSUMPTION.format(accountContract=account_contract)
         result = await self._request_with_token(
             method="GET",
             url=url,
             label=f"graphic_consumption ({account_contract})",
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[graphic_consumption %s] Date primite: type=%s, keys=%s, sample=%s",
+            "[graphic_consumption %s] Data received: type=%s, keys=%s, sample=%s",
             account_contract,
             type(result).__name__,
             list(result.keys()) if isinstance(result, dict) else "N/A",
@@ -812,20 +812,20 @@ class EonApiClient:
         return result
 
     # ──────────────────────────────────────────
-    # Citiri Contor & Convenții
+    # Meter Readings & Conventions
     # ──────────────────────────────────────────
 
     async def async_fetch_meter_index(self, account_contract: str):
-        """Obține datele despre indexul curent."""
+        """Fetch current meter index data."""
         url = URL_METER_INDEX.format(accountContract=account_contract)
         result = await self._request_with_token(
             method="GET",
             url=url,
             label=f"meter_index ({account_contract})",
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[meter_index %s] Date primite: type=%s, keys=%s, sample=%s",
+            "[meter_index %s] Data received: type=%s, keys=%s, sample=%s",
             account_contract,
             type(result).__name__,
             list(result.keys()) if isinstance(result, dict) else "N/A",
@@ -834,16 +834,16 @@ class EonApiClient:
         return result
 
     async def async_fetch_meter_history(self, account_contract: str):
-        """Obține istoricul citirilor contorului."""
+        """Fetch meter reading history."""
         url = URL_METER_HISTORY.format(accountContract=account_contract)
         result = await self._request_with_token(
             method="GET",
             url=url,
             label=f"meter_history ({account_contract})",
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[meter_history %s] Date primite: type=%s, len=%s, sample keys=%s, sample content=%s",
+            "[meter_history %s] Data received: type=%s, len=%s, sample keys=%s, sample content=%s",
             account_contract,
             type(result).__name__,
             len(result) if isinstance(result, (list, dict)) else "N/A",
@@ -853,16 +853,16 @@ class EonApiClient:
         return result
 
     async def async_fetch_consumption_convention(self, account_contract: str):
-        """Obține convenția de consum curentă."""
+        """Fetch current consumption convention."""
         url = URL_CONSUMPTION_CONVENTION.format(accountContract=account_contract)
         result = await self._request_with_token(
             method="GET",
             url=url,
             label=f"consumption_convention ({account_contract})",
         )
-        # Debug clar pentru datele primite
+        # Clear debug for received data
         _LOGGER.debug(
-            "[consumption_convention %s] Date primite: type=%s, keys=%s, sample=%s",
+            "[consumption_convention %s] Data received: type=%s, keys=%s, sample=%s",
             account_contract,
             type(result).__name__,
             list(result.keys()) if isinstance(result, dict) else "N/A",
@@ -873,11 +873,11 @@ class EonApiClient:
     async def async_submit_meter_index(
         self, account_contract: str, indexes: list[dict]
     ):
-        """Trimite indexul contorului către API-ul E·ON."""
+        """Submit meter index to the E-ON API."""
         label = f"submit_meter ({account_contract})"
 
         if not account_contract or not indexes:
-            _LOGGER.error("[%s] Parametri invalizi pentru trimiterea indexului.", label)
+            _LOGGER.error("[%s] Invalid parameters for index submission.", label)
             return None
 
         payload = {
@@ -887,13 +887,13 @@ class EonApiClient:
         }
 
         if not await self._ensure_token_valid():
-            _LOGGER.error("[%s] Token invalid. Trimiterea nu poate fi efectuată.", label)
+            _LOGGER.error("[%s] Invalid token. Submission cannot be performed.", label)
             return None
 
         gen_before = self._token_generation
         headers = {**HEADERS, "Authorization": f"{self._token_type} {self._access_token}"}
 
-        _LOGGER.debug("[%s] Trimitere cerere: URL=%s, Payload=%s", label, URL_METER_SUBMIT, json.dumps(payload))
+        _LOGGER.debug("[%s] Sending request: URL=%s, Payload=%s", label, URL_METER_SUBMIT, json.dumps(payload))
 
         try:
             async with self._session.post(
@@ -903,30 +903,30 @@ class EonApiClient:
                 timeout=self._timeout,
             ) as resp:
                 response_text = await resp.text()
-                _LOGGER.debug("[%s] Răspuns: Status=%s, Body=%s", label, resp.status, response_text)
+                _LOGGER.debug("[%s] Response: Status=%s, Body=%s", label, resp.status, response_text)
 
                 if resp.status == 200:
                     data = await resp.json()
-                    # Debug clar pentru datele primite la submit
+                    # Clear debug for received data on submit
                     _LOGGER.debug(
-                        "[%s] Date primite: type=%s, keys=%s, sample=%s",
+                        "[%s] Data received: type=%s, keys=%s, sample=%s",
                         label,
                         type(data).__name__,
                         list(data.keys()) if isinstance(data, dict) else "N/A",
                         json.dumps(data, default=str)[:500] if data else "None"
                     )
-                    _LOGGER.debug("[%s] Index trimis cu succes.", label)
+                    _LOGGER.debug("[%s] Index submitted successfully.", label)
                     return data
 
                 if resp.status == 401:
-                    # Verifică dacă alt apel a reînnoit deja tokenul
+                    # Check if another call already renewed the token
                     if self._token_generation != gen_before:
-                        _LOGGER.debug("[%s] Token reînnoit de alt apel. Se reîncearcă.", label)
+                        _LOGGER.debug("[%s] Token renewed by another call. Retrying.", label)
                     else:
-                        _LOGGER.warning("[%s] Token invalid (401). Se reîncearcă...", label)
+                        _LOGGER.warning("[%s] Invalid token (401). Retrying...", label)
                         self.invalidate_token()
                         if not await self._ensure_token_valid():
-                            _LOGGER.error("[%s] Reautentificare eșuată.", label)
+                            _LOGGER.error("[%s] Re-authentication failed.", label)
                             return None
 
                     headers_retry = {**HEADERS, "Authorization": f"{self._token_type} {self._access_token}"}
@@ -937,112 +937,112 @@ class EonApiClient:
                         timeout=self._timeout,
                     ) as resp_retry:
                         response_text_retry = await resp_retry.text()
-                        _LOGGER.debug("[%s] Reîncercare: Status=%s, Body=%s", label, resp_retry.status, response_text_retry)
+                        _LOGGER.debug("[%s] Retry: Status=%s, Body=%s", label, resp_retry.status, response_text_retry)
                         if resp_retry.status == 200:
                             data_retry = await resp_retry.json()
-                            # Debug clar pentru datele primite la retry
+                            # Clear debug for received data on retry
                             _LOGGER.debug(
-                                "[%s] Date primite (retry): type=%s, keys=%s, sample=%s",
+                                "[%s] Data received (retry): type=%s, keys=%s, sample=%s",
                                 label,
                                 type(data_retry).__name__,
                                 list(data_retry.keys()) if isinstance(data_retry, dict) else "N/A",
                                 json.dumps(data_retry, default=str)[:500] if data_retry else "None"
                             )
-                            _LOGGER.debug("[%s] Index trimis cu succes (după reautentificare).", label)
+                            _LOGGER.debug("[%s] Index submitted successfully (after re-authentication).", label)
                             return data_retry
-                        _LOGGER.error("[%s] Reîncercare eșuată. Cod HTTP=%s", label, resp_retry.status)
+                        _LOGGER.error("[%s] Retry failed. HTTP code=%s", label, resp_retry.status)
                         return None
 
-                _LOGGER.error("[%s] Eroare. Cod HTTP=%s, Răspuns=%s", label, resp.status, response_text)
+                _LOGGER.error("[%s] Error. HTTP code=%s, Response=%s", label, resp.status, response_text)
                 return None
 
         except asyncio.TimeoutError:
-            _LOGGER.error("[%s] Depășire de timp.", label)
+            _LOGGER.error("[%s] Timeout.", label)
             return None
         except Exception as e:
-            _LOGGER.exception("[%s] Eroare: %s", label, e)
+            _LOGGER.exception("[%s] Error: %s", label, e)
             return None
 
     # ──────────────────────────────────────────
-    # Metode interne
+    # Internal methods
     # ──────────────────────────────────────────
 
     async def _request_with_token(self, method: str, url: str, label: str = "request"):
         """
-        Cerere cu gestionare automată a tokenului.
+        Request with automatic token management.
 
-        1. Asigură token valid (protejat de _auth_lock)
-        2. Execută cererea
-        3. La 401: verifică dacă alt apel a reînnoit deja tokenul, altfel refresh/login + reîncearcă
+        1. Ensure valid token (protected by _auth_lock)
+        2. Execute the request
+        3. On 401: check if another call already renewed the token, otherwise refresh/login + retry
         """
         if not await self._ensure_token_valid():
-            _LOGGER.error("[%s] Nu s-a putut obține un token valid.", label)
+            _LOGGER.error("[%s] Could not obtain a valid token.", label)
             return None
 
-        # Memorează generația tokenului înainte de request
+        # Remember token generation before request
         gen_before = self._token_generation
 
-        # Prima încercare
+        # First attempt
         resp_data, status = await self._do_request(method, url, label)
         if status != 401:
             return resp_data
 
-        # 401 → verifică dacă alt apel concurent a reînnoit deja tokenul
+        # 401 → check if another concurrent call already renewed the token
         if self._token_generation != gen_before:
-            _LOGGER.debug("[%s] Cod HTTP=401, dar tokenul a fost deja reînnoit (gen %s→%s). Se reîncearcă.", label, gen_before, self._token_generation)
+            _LOGGER.debug("[%s] HTTP 401, but token already renewed (gen %s→%s). Retrying.", label, gen_before, self._token_generation)
         else:
-            # Tokenul nu a fost reînnoit — forțăm refresh/login
-            _LOGGER.warning("[%s] Cod HTTP=401 → se reîncearcă cu refresh token.", label)
+            # Token was not renewed — force refresh/login
+            _LOGGER.warning("[%s] HTTP 401 → retrying with refresh token.", label)
             self.invalidate_token()
             if not await self._ensure_token_valid():
-                _LOGGER.error("[%s] Reautentificare eșuată.", label)
+                _LOGGER.error("[%s] Re-authentication failed.", label)
                 return None
 
-        # A doua încercare
+        # Second attempt
         resp_data, status = await self._do_request(method, url, label)
         if status == 401:
-            _LOGGER.error("[%s] A doua încercare eșuată (401). Se abandonează.", label)
+            _LOGGER.error("[%s] Second attempt failed (401). Giving up.", label)
             return None
 
         return resp_data
 
     async def _request_with_token_post(self, url: str, payload, label: str = "request_post"):
         """
-        Cerere POST cu body JSON și gestionare automată a tokenului.
+        POST request with JSON body and automatic token management.
 
-        Similar cu _request_with_token, dar trimite payload JSON.
+        Similar to _request_with_token, but sends JSON payload.
         """
         if not await self._ensure_token_valid():
-            _LOGGER.error("[%s] Nu s-a putut obține un token valid.", label)
+            _LOGGER.error("[%s] Could not obtain a valid token.", label)
             return None
 
         gen_before = self._token_generation
 
-        # Prima încercare
+        # First attempt
         resp_data, status = await self._do_request("POST", url, label, json_payload=payload)
         if status != 401:
             return resp_data
 
-        # 401 → verifică dacă alt apel concurent a reînnoit deja tokenul
+        # 401 → check if another concurrent call already renewed the token
         if self._token_generation != gen_before:
-            _LOGGER.debug("[%s] Cod HTTP=401, dar tokenul a fost deja reînnoit (gen %s→%s). Se reîncearcă.", label, gen_before, self._token_generation)
+            _LOGGER.debug("[%s] HTTP 401, but token already renewed (gen %s→%s). Retrying.", label, gen_before, self._token_generation)
         else:
-            _LOGGER.warning("[%s] Cod HTTP=401 → se reîncearcă cu refresh token.", label)
+            _LOGGER.warning("[%s] HTTP 401 → retrying with refresh token.", label)
             self.invalidate_token()
             if not await self._ensure_token_valid():
-                _LOGGER.error("[%s] Reautentificare eșuată.", label)
+                _LOGGER.error("[%s] Re-authentication failed.", label)
                 return None
 
-        # A doua încercare
+        # Second attempt
         resp_data, status = await self._do_request("POST", url, label, json_payload=payload)
         if status == 401:
-            _LOGGER.error("[%s] A doua încercare eșuată (401). Se abandonează.", label)
+            _LOGGER.error("[%s] Second attempt failed (401). Giving up.", label)
             return None
 
         return resp_data
 
     async def _do_request(self, method: str, url: str, label: str = "request", json_payload=None):
-        """Efectuează o cerere HTTP cu tokenul curent. Returnează (data, status)."""
+        """Perform an HTTP request with the current token. Returns (data, status)."""
         headers = {**HEADERS}
         if self._access_token:
             headers["Authorization"] = f"{self._token_type} {self._access_token}"
@@ -1059,9 +1059,9 @@ class EonApiClient:
 
                 if resp.status == 200:
                     data = await resp.json()
-                    # Debug clar pentru datele primite în _do_request
+                    # Clear debug for received data in _do_request
                     _LOGGER.debug(
-                        "[%s] Răspuns OK (200). Dimensiune: %s caractere. Date JSON: type=%s, len=%s, sample keys=%s, sample content=%s",
+                        "[%s] Response OK (200). Size: %s chars. JSON data: type=%s, len=%s, sample keys=%s, sample content=%s",
                         label,
                         len(response_text),
                         type(data).__name__,
@@ -1071,14 +1071,14 @@ class EonApiClient:
                     )
                     return data, resp.status
 
-                _LOGGER.error("[%s] Eroare: %s %s → Cod HTTP=%s, Răspuns=%s", label, method, url, resp.status, response_text)
+                _LOGGER.error("[%s] Error: %s %s → HTTP code=%s, Response=%s", label, method, url, resp.status, response_text)
                 return None, resp.status
 
         except asyncio.TimeoutError:
-            _LOGGER.error("[%s] Depășire de timp: %s %s.", label, method, url)
+            _LOGGER.error("[%s] Timeout: %s %s.", label, method, url)
             return None, 0
         except Exception as e:
-            _LOGGER.error("[%s] Eroare: %s %s → %s", label, method, url, e)
+            _LOGGER.error("[%s] Error: %s %s → %s", label, method, url, e)
             return None, 0
 
     async def _paginated_request(
@@ -1089,13 +1089,13 @@ class EonApiClient:
         label: str = "paginated",
         max_pages: int | None = None,
     ):
-        """Obține paginile unui endpoint paginat. Returnează lista cumulată.
+        """Fetch pages from a paginated endpoint. Returns accumulated list.
 
         Args:
-            max_pages: Număr maxim de pagini de adus. None = toate paginile.
+            max_pages: Maximum number of pages to fetch. None = all pages.
         """
         if not await self._ensure_token_valid():
-            _LOGGER.error("[%s] Nu s-a putut obține un token valid.", label)
+            _LOGGER.error("[%s] Could not obtain a valid token.", label)
             return None
 
         results: list = []
@@ -1110,7 +1110,7 @@ class EonApiClient:
             gen_before = self._token_generation
             headers = {**HEADERS, "Authorization": f"{self._token_type} {self._access_token}"}
 
-            _LOGGER.debug("[%s] Pagină %s: %s", label, page, url)
+            _LOGGER.debug("[%s] Page %s: %s", label, page, url)
 
             try:
                 async with self._session.get(
@@ -1120,9 +1120,9 @@ class EonApiClient:
 
                     if resp.status == 200:
                         data = await resp.json()
-                        # Debug clar pentru datele primite per pagină
+                        # Clear debug for received data per page
                         _LOGGER.debug(
-                            "[%s] Pagină %s: Date JSON: type=%s, keys=%s, list len=%s, sample list keys=%s, sample content=%s",
+                            "[%s] Page %s: JSON data: type=%s, keys=%s, list len=%s, sample list keys=%s, sample content=%s",
                             label, page,
                             type(data).__name__,
                             list(data.keys()) if isinstance(data, dict) else "N/A",
@@ -1136,39 +1136,39 @@ class EonApiClient:
 
                         has_next = data.get("hasNext", False)
                         _LOGGER.debug(
-                            "[%s] Pagină %s: %s elemente, are_următoare=%s.",
+                            "[%s] Page %s: %s items, has_next=%s.",
                             label, page, len(chunk), has_next,
                         )
 
                         if not has_next:
                             break
                         if max_pages is not None and page >= max_pages:
-                            _LOGGER.debug("[%s] Limită paginare atinsă (%s pagini).", label, max_pages)
+                            _LOGGER.debug("[%s] Pagination limit reached (%s pages).", label, max_pages)
                             break
                         page += 1
                         continue
 
                     if resp.status == 401 and not retried:
-                        # Verifică dacă alt apel a reînnoit deja tokenul
+                        # Check if another call already renewed the token
                         if self._token_generation != gen_before:
-                            _LOGGER.debug("[%s] Token reînnoit de alt apel (pagină %s). Se reîncearcă.", label, page)
+                            _LOGGER.debug("[%s] Token renewed by another call (page %s). Retrying.", label, page)
                         else:
-                            _LOGGER.warning("[%s] Token expirat (pagină %s). Se reîncearcă...", label, page)
+                            _LOGGER.warning("[%s] Token expired (page %s). Retrying...", label, page)
                             self.invalidate_token()
                             if not await self._ensure_token_valid():
                                 return results if results else None
                         retried = True
                         continue
 
-                    _LOGGER.error("[%s] Eroare: Cod HTTP=%s (pagină %s), Răspuns=%s", label, resp.status, page, response_text)
+                    _LOGGER.error("[%s] Error: HTTP code=%s (page %s), Response=%s", label, resp.status, page, response_text)
                     break
 
             except asyncio.TimeoutError:
-                _LOGGER.error("[%s] Depășire de timp (pagină %s).", label, page)
+                _LOGGER.error("[%s] Timeout (page %s).", label, page)
                 break
             except Exception as e:
-                _LOGGER.error("[%s] Eroare: %s", label, e)
+                _LOGGER.error("[%s] Error: %s", label, e)
                 break
 
-        _LOGGER.debug("[%s] Total: %s elemente din %s pagini.", label, len(results), page)
+        _LOGGER.debug("[%s] Total: %s items from %s pages.", label, len(results), page)
         return results
