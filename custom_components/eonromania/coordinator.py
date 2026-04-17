@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import EonApiClient
-from .const import DOMAIN, LICENSE_DATA_KEY
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -124,11 +124,6 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
             rescheduling_plans, graphic_consumption, meter_history
         Account-only: user-details only (no contracts)
         """
-        # License check — do not fetch data if the license/trial is not valid
-        license_mgr = self.hass.data.get(DOMAIN, {}).get(LICENSE_DATA_KEY)
-        if license_mgr and not license_mgr.is_valid:
-            _LOGGER.debug("[EonRomania] Invalid license — skipping API calls")
-            return self.data or {}
 
         # ── Account-only mode: personal data only ──
         if self.account_only:

@@ -9,7 +9,7 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, LICENSE_DATA_KEY
+from .const import DOMAIN
 from .coordinator import EonRomaniaCoordinator
 from .helpers import (
     UTILITY_BUTTON_CONFIG,
@@ -27,17 +27,6 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ):
     """Set up buttons for the given config_entry."""
-    # License check
-    mgr = hass.data.get(DOMAIN, {}).get(LICENSE_DATA_KEY)
-    is_license_valid = mgr.is_valid if mgr else False
-    if not is_license_valid:
-        _LOGGER.debug(
-            "Button platform for %s not initialized — invalid license (entry_id=%s).",
-            DOMAIN,
-            config_entry.entry_id,
-        )
-        return
-
     _LOGGER.debug(
         "Initializing button platform for %s (entry_id=%s).",
         DOMAIN,

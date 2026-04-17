@@ -101,13 +101,6 @@ PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BUTTON]
 # ──────────────────────────────────────────────
 ATTRIBUTION = "Data provided by E·ON Romania"
 
-# ──────────────────────────────────────────────
-# Licensing
-# ──────────────────────────────────────────────
-CONF_LICENSE_KEY = "license_key"
-LICENSE_DATA_KEY = "eonromania_license_manager"
-LICENSE_PURCHASE_URL = "https://github.com/cnecrea/eonromania"
-
 CONF_AUTO_RELOAD = "auto_reload_on_failure"
 CONF_AUTO_RELOAD_INTERVAL = "auto_reload_interval"
 DEFAULT_AUTO_RELOAD_INTERVAL = 30

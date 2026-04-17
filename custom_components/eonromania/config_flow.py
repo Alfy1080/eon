@@ -381,7 +381,7 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 # ------------------------------------------------------------------
 
 class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
-    """OptionsFlow — modify settings + contract selection + license."""
+    """OptionsFlow — modify settings + contract selection."""
 
     def __init__(self) -> None:
         self._username: str = ""
