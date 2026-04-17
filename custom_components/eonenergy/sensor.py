@@ -15,7 +15,7 @@ from homeassistant.const import UnitOfVolume, UnitOfEnergy
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN, ATTRIBUTION
-from .coordinator import EonRomaniaCoordinator
+from .coordinator import EonEnergyCoordinator
 from .helpers import (
     CONVENTION_MONTH_MAPPING,
     INVOICE_BALANCE_KEY_MAP,
@@ -39,12 +39,12 @@ _LOGGER = logging.getLogger(__name__)
 # ──────────────────────────────────────────────
 # Base class
 # ──────────────────────────────────────────────
-class EonRomaniaEntity(CoordinatorEntity[EonRomaniaCoordinator], SensorEntity):
+class EonEnergyEntity(CoordinatorEntity[EonEnergyCoordinator], SensorEntity):
     """Base class for E-ON Energy entities."""
 
     _attr_has_entity_name = False
 
-    def __init__(self, coordinator: EonRomaniaCoordinator, config_entry: ConfigEntry):
+    def __init__(self, coordinator: EonEnergyCoordinator, config_entry: ConfigEntry):
         """Initialize with coordinator and config_entry."""
         super().__init__(coordinator)
         self._config_entry = config_entry
@@ -74,7 +74,7 @@ class EonRomaniaEntity(CoordinatorEntity[EonRomaniaCoordinator], SensorEntity):
 # async_setup_entry
 # ──────────────────────────────────────────────
 def _build_sensors_for_coordinator(
-    coordinator: EonRomaniaCoordinator,
+    coordinator: EonEnergyCoordinator,
     config_entry: ConfigEntry,
 ) -> list[SensorEntity]:
     """Build the list of sensors for a single coordinator (contract)."""
@@ -229,7 +229,7 @@ async def async_setup_entry(
     async_add_entities,
 ):
     """Set up sensors for all selected contracts."""
-    coordinators: dict[str, EonRomaniaCoordinator] = config_entry.runtime_data.coordinators
+    coordinators: dict[str, EonEnergyCoordinator] = config_entry.runtime_data.coordinators
 
     _LOGGER.debug(
         "Initializing sensor platform for %s (entry_id=%s, contracts=%s).",
@@ -268,13 +268,13 @@ async def async_setup_entry(
 # ──────────────────────────────────────────────
 # UserDetailsSensor (for accounts without contracts)
 # ──────────────────────────────────────────────
-class UserDetailsSensor(CoordinatorEntity[EonRomaniaCoordinator], SensorEntity):
+class UserDetailsSensor(CoordinatorEntity[EonEnergyCoordinator], SensorEntity):
     """Sensor with user personal data (for accounts without contracts)."""
 
     _attr_has_entity_name = False
     _attr_icon = "mdi:account-circle"
 
-    def __init__(self, coordinator: EonRomaniaCoordinator, config_entry: ConfigEntry):
+    def __init__(self, coordinator: EonEnergyCoordinator, config_entry: ConfigEntry):
         super().__init__(coordinator)
         self._config_entry = config_entry
         username = config_entry.data.get("username", "unknown")
@@ -345,7 +345,7 @@ class UserDetailsSensor(CoordinatorEntity[EonRomaniaCoordinator], SensorEntity):
 # ──────────────────────────────────────────────
 # ContractDetailsSensor
 # ──────────────────────────────────────────────
-class ContractDetailsSensor(EonRomaniaEntity):
+class ContractDetailsSensor(EonEnergyEntity):
     """Sensor for displaying contract data."""
 
     _attr_icon = "mdi:file-document-edit-outline"
@@ -608,7 +608,7 @@ class ContractDetailsSensor(EonRomaniaEntity):
 # ──────────────────────────────────────────────
 # InvoiceBalanceSensor
 # ──────────────────────────────────────────────
-class InvoiceBalanceSensor(EonRomaniaEntity):
+class InvoiceBalanceSensor(EonEnergyEntity):
     """Sensor for invoice balance per contract."""
 
     _attr_icon = "mdi:cash"
@@ -656,7 +656,7 @@ class InvoiceBalanceSensor(EonRomaniaEntity):
 # ──────────────────────────────────────────────
 # InvoiceBalanceProsumSensor
 # ──────────────────────────────────────────────
-class InvoiceBalanceProsumSensor(EonRomaniaEntity):
+class InvoiceBalanceProsumSensor(EonEnergyEntity):
     """Sensor for prosumer invoice balance."""
 
     _attr_icon = "mdi:solar-power-variant"
@@ -704,7 +704,7 @@ class InvoiceBalanceProsumSensor(EonRomaniaEntity):
 # ──────────────────────────────────────────────
 # ReschedulingPlansSensor
 # ──────────────────────────────────────────────
-class ReschedulingPlansSensor(EonRomaniaEntity):
+class ReschedulingPlansSensor(EonEnergyEntity):
     """Sensor for rescheduling plans."""
 
     _attr_icon = "mdi:calendar-clock"
@@ -743,7 +743,7 @@ class ReschedulingPlansSensor(EonRomaniaEntity):
 # ──────────────────────────────────────────────
 # MeterIndexSensor
 # ──────────────────────────────────────────────
-class MeterIndexSensor(EonRomaniaEntity):
+class MeterIndexSensor(EonEnergyEntity):
     """Sensor for displaying current meter index data."""
 
     def __init__(self, coordinator, config_entry, device_number, subcontract_code=None, utility_type=None):
@@ -875,7 +875,7 @@ class MeterIndexSensor(EonRomaniaEntity):
 # ──────────────────────────────────────────────
 # ReadingAllowedSensor
 # ──────────────────────────────────────────────
-class ReadingAllowedSensor(EonRomaniaEntity):
+class ReadingAllowedSensor(EonEnergyEntity):
     """Sensor for checking meter index reading permission."""
 
     _attr_translation_key = "reading_allowed"
@@ -1013,7 +1013,7 @@ class ReadingAllowedSensor(EonRomaniaEntity):
 # ──────────────────────────────────────────────
 # OverdueInvoiceSensor
 # ──────────────────────────────────────────────
-class OverdueInvoiceSensor(EonRomaniaEntity):
+class OverdueInvoiceSensor(EonEnergyEntity):
     """Sensor for displaying outstanding invoice balances."""
 
     _attr_icon = "mdi:invoice-text-arrow-left"
@@ -1067,7 +1067,7 @@ class OverdueInvoiceSensor(EonRomaniaEntity):
 # ──────────────────────────────────────────────
 # ProsumerInvoiceSensor
 # ──────────────────────────────────────────────
-class ProsumerInvoiceSensor(EonRomaniaEntity):
+class ProsumerInvoiceSensor(EonEnergyEntity):
     """Sensor for displaying outstanding prosumer invoice balances."""
 
     _attr_icon = "mdi:invoice-text-arrow-left"
@@ -1141,7 +1141,7 @@ class ProsumerInvoiceSensor(EonRomaniaEntity):
 # ──────────────────────────────────────────────
 # ConsumptionAgreementSensor
 # ──────────────────────────────────────────────
-class ConsumptionAgreementSensor(EonRomaniaEntity):
+class ConsumptionAgreementSensor(EonEnergyEntity):
     """Sensor for displaying consumption agreement data."""
 
     _attr_icon = "mdi:chart-bar"
@@ -1271,7 +1271,7 @@ class ConsumptionAgreementSensor(EonRomaniaEntity):
 # ──────────────────────────────────────────────
 # IndexArchiveSensor
 # ──────────────────────────────────────────────
-class IndexArchiveSensor(EonRomaniaEntity):
+class IndexArchiveSensor(EonEnergyEntity):
     """Sensor for displaying historical meter index data."""
 
     def __init__(self, coordinator, config_entry, year):
@@ -1334,7 +1334,7 @@ class IndexArchiveSensor(EonRomaniaEntity):
 # ──────────────────────────────────────────────
 # PaymentArchiveSensor
 # ──────────────────────────────────────────────
-class PaymentArchiveSensor(EonRomaniaEntity):
+class PaymentArchiveSensor(EonEnergyEntity):
     """Sensor for displaying payment history (grouped by year)."""
 
     _attr_icon = "mdi:cash-register"
@@ -1385,7 +1385,7 @@ class PaymentArchiveSensor(EonRomaniaEntity):
 # ──────────────────────────────────────────────
 # ConsumptionArchiveSensor
 # ──────────────────────────────────────────────
-class ConsumptionArchiveSensor(EonRomaniaEntity):
+class ConsumptionArchiveSensor(EonEnergyEntity):
     """Sensor for displaying historical consumption data."""
 
     def __init__(self, coordinator, config_entry, year, monthly_values):

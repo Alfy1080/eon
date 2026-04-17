@@ -28,7 +28,7 @@ HEAVY_REFRESH_EVERY = 4  # At 6h interval = heavy every 24h
 MAX_PAGINATED_PAGES = 3
 
 
-class EonRomaniaCoordinator(DataUpdateCoordinator):
+class EonEnergyCoordinator(DataUpdateCoordinator):
     """Coordinator that handles all E-ON Energy data."""
 
     def __init__(
@@ -45,7 +45,7 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
         super().__init__(
             hass,
             _LOGGER,
-            name=f"EonRomaniaCoordinator_{cod_incasare}",
+            name=f"EonEnergyCoordinator_{cod_incasare}",
             update_interval=timedelta(seconds=update_interval),
         )
         self.api_client = api_client
@@ -538,7 +538,7 @@ class EonRomaniaCoordinator(DataUpdateCoordinator):
         """Create a persistent notification requesting MFA reconfiguration."""
         from homeassistant.components import persistent_notification
 
-        notification_id = f"eonromania_reauth_{self.cod_incasare}"
+        notification_id = f"eonenergy_reauth_{self.cod_incasare}"
         persistent_notification.async_create(
             self.hass,
             message=(

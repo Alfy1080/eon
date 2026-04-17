@@ -10,8 +10,7 @@ Before you begin, make sure you have:
 
 - **Home Assistant** version 2024.x or newer (requires `entry.runtime_data` pattern)
 - **Active E-ON Myline account** — with a working email and password on the E-ON Myline mobile app
-- **Valid license** — from licensing-server.com/donate?ref=eonromania
-- **HACS** installed (optional, but recommended) — HACS instructions
+- **HACS** installed (optional, but recommended) — [HACS instructions](https://hacs.xyz/docs/use)
 
 ---
 
@@ -51,12 +50,12 @@ Before you begin, make sure you have:
 
 ### Step 2 — Copy the folder
 
-Copy the entire `custom_components/eonromania/` folder into your Home Assistant configuration directory:
+Copy the entire `custom_components/eonenergy/` folder into your Home Assistant configuration directory:
 
 ```
 config/
 └── custom_components/
-    └── eonromania/
+    └── eonenergy/
         ├── __init__.py
         ├── api.py
         ├── button.py
@@ -68,10 +67,11 @@ config/
         ├── sensor.py
         ├── strings.json
         └── translations/
+            ├── en.json
             └── ro.json
 ```
 
-**Note**: the folder must be exactly `eonromania` (lowercase, no spaces).
+**Note**: the folder must be exactly `eonenergy` (lowercase, no spaces).
 
 If the `custom_components` folder does not exist, create it.
 
@@ -87,7 +87,7 @@ Same as in Method 1.
 
 1. **Settings** → **Devices & Services**
 2. Click **+ Add Integration** (the blue button, bottom right)
-3. Search for "**E-ON Energy**" — "E-ON Energy" will appear
+3. Search for "**E-ON Energy**"
 4. Click on it
 
 ### Step 2 — Fill in the authentication form
@@ -128,22 +128,7 @@ You have two options:
 
 **DUO Contracts**: collective contracts appear with the `(Collective/DUO)` label. When selected, the integration automatically discovers the subcontracts (gas + electricity) and creates dedicated sensors for each.
 
-### Step 4 — License
-
-The integration requires a **valid license** to function. Without a license:
-- Only the `sensor.eonromania_{nlc}_license` sensor with the value "License required" is created
-- All normal sensors and buttons are disabled
-
-To enter the license:
-1. **Settings** → **Devices & Services**
-2. Find **E-ON Energy** → click on **Configure**
-3. Select **License**
-4. Enter the license key
-5. Click **Save**
-
-Licenses available at: licensing-server.com/license/eonromania
-
-### Step 5 — Confirm
+### Step 4 — Confirm
 
 Click **Save**. The integration will install and create:
 - 1 device per selected contract
@@ -176,16 +161,16 @@ All settings can be modified from the UI, without deleting and re-adding the int
 
 | Sensor | Entity ID |
 |---|---|
-| Contract data | `sensor.eonromania_{billing_code}_contract_data` |
-| Invoice balance | `sensor.eonromania_{billing_code}_invoice_balance` |
-| Prosumer balance | `sensor.eonromania_{billing_code}_prosumer_balance` |
-| Reading allowed | `sensor.eonromania_{billing_code}_reading_allowed` |
-| Consumption agreement | `sensor.eonromania_{billing_code}_consumption_agreement` |
-| Overdue invoice | `sensor.eonromania_{billing_code}_overdue_invoice` |
-| Prosumer invoice | `sensor.eonromania_{billing_code}_prosumer_invoice` |
-| Payment archive (year) | `sensor.eonromania_{billing_code}_payment_archive_{year}` |
-| Submit gas index | `button.eonromania_{billing_code}_submit_gas_index` |
-| Submit electricity index | `button.eonromania_{billing_code}_submit_electricity_index` |
+| Contract data | `sensor.eonenergy_{billing_code}_contract_data` |
+| Invoice balance | `sensor.eonenergy_{billing_code}_invoice_balance` |
+| Prosumer balance | `sensor.eonenergy_{billing_code}_prosumer_balance` |
+| Reading allowed | `sensor.eonenergy_{billing_code}_reading_allowed` |
+| Consumption agreement | `sensor.eonenergy_{billing_code}_consumption_agreement` |
+| Overdue invoice | `sensor.eonenergy_{billing_code}_overdue_invoice` |
+| Prosumer invoice | `sensor.eonenergy_{billing_code}_prosumer_invoice` |
+| Payment archive (year) | `sensor.eonenergy_{billing_code}_payment_archive_{year}` |
+| Submit gas index | `button.eonenergy_{billing_code}_submit_gas_index` |
+| Submit electricity index | `button.eonenergy_{billing_code}_submit_electricity_index` |
 
 ### Contract-type specific sensors:
 
@@ -199,12 +184,12 @@ All settings can be modified from the UI, without deleting and re-adding the int
 
 | Sensor | Entity ID |
 |---|---|
-| Gas index (subcontract) | `sensor.eonromania_{subcontract_code}_gas_index` |
-| Electricity index (subcontract) | `sensor.eonromania_{subcontract_code}_electricity_index` |
-| Gas reading allowed | `sensor.eonromania_{subcontract_code}_reading_allowed` |
-| Electricity reading allowed | `sensor.eonromania_{subcontract_code}_reading_allowed` |
-| Submit gas index (subcontract) | `button.eonromania_{subcontract_code}_submit_gas_index` |
-| Submit electricity index (subcontract) | `button.eonromania_{subcontract_code}_submit_electricity_index` |
+| Gas index (subcontract) | `sensor.eonenergy_{subcontract_code}_gas_index` |
+| Electricity index (subcontract) | `sensor.eonenergy_{subcontract_code}_electricity_index` |
+| Gas reading allowed | `sensor.eonenergy_{subcontract_code}_reading_allowed` |
+| Electricity reading allowed | `sensor.eonenergy_{subcontract_code}_reading_allowed` |
+| Submit gas index (subcontract) | `button.eonenergy_{subcontract_code}_submit_gas_index` |
+| Submit electricity index (subcontract) | `button.eonenergy_{subcontract_code}_submit_electricity_index` |
 
 ---
 
@@ -250,14 +235,14 @@ Restart HA after adding them. The buttons look for the exact entities `input_num
 type: entities
 title: E-ON Energy
 entities:
-  - entity: sensor.eonromania_ro123456789012_contract_data
-  - entity: sensor.eonromania_ro123456789012_invoice_balance
-  - entity: sensor.eonromania_ro123456789012_gas_index
-  - entity: sensor.eonromania_ro123456789012_reading_allowed
-  - entity: sensor.eonromania_ro123456789012_consumption_agreement
-  - entity: sensor.eonromania_ro123456789012_overdue_invoice
-  - entity: sensor.eonromania_ro123456789012_prosumer_invoice
-  - entity: button.eonromania_ro123456789012_submit_gas_index
+  - entity: sensor.eonenergy_ro123456789012_contract_data
+  - entity: sensor.eonenergy_ro123456789012_invoice_balance
+  - entity: sensor.eonenergy_ro123456789012_gas_index
+  - entity: sensor.eonenergy_ro123456789012_reading_allowed
+  - entity: sensor.eonenergy_ro123456789012_consumption_agreement
+  - entity: sensor.eonenergy_ro123456789012_overdue_invoice
+  - entity: sensor.eonenergy_ro123456789012_prosumer_invoice
+  - entity: button.eonenergy_ro123456789012_submit_gas_index
 ```
 
 ### Card — Invoice balance
@@ -266,15 +251,15 @@ entities:
 type: entities
 title: Invoice Balance
 entities:
-  - entity: sensor.eonromania_ro123456789012_invoice_balance
+  - entity: sensor.eonenergy_ro123456789012_invoice_balance
     name: Balance
   - type: attribute
-    entity: sensor.eonromania_ro123456789012_invoice_balance
-    attribute: Sold de plată
+    entity: sensor.eonenergy_ro123456789012_invoice_balance
+    attribute: Payment balance
     name: To pay
   - type: attribute
-    entity: sensor.eonromania_ro123456789012_invoice_balance
-    attribute: Rambursare disponibilă
+    entity: sensor.eonenergy_ro123456789012_invoice_balance
+    attribute: Refund available
     name: Refund
 ```
 
@@ -284,11 +269,11 @@ entities:
 type: entities
 title: Overdue Invoices
 entities:
-  - entity: sensor.eonromania_ro123456789012_overdue_invoice
+  - entity: sensor.eonenergy_ro123456789012_overdue_invoice
     name: Overdue invoice
   - type: attribute
-    entity: sensor.eonromania_ro123456789012_overdue_invoice
-    attribute: Total neachitat
+    entity: sensor.eonenergy_ro123456789012_overdue_invoice
+    attribute: Total unpaid
     name: Total unpaid
 ```
 
@@ -302,10 +287,10 @@ cards:
     entities:
       - entity: input_number.gas_meter_reading
         name: Index to submit
-      - entity: sensor.eonromania_ro123456789012_reading_allowed
+      - entity: sensor.eonenergy_ro123456789012_reading_allowed
         name: Reading allowed
   - type: button
-    entity: button.eonromania_ro123456789012_submit_gas_index
+    entity: button.eonenergy_ro123456789012_submit_gas_index
     name: Submit gas index
     icon: mdi:fire
     tap_action:
@@ -322,10 +307,10 @@ cards:
     entities:
       - entity: input_number.energy_meter_reading
         name: Index to submit
-      - entity: sensor.eonromania_ro345678901234_reading_allowed
+      - entity: sensor.eonenergy_ro345678901234_reading_allowed
         name: Electricity reading allowed
   - type: button
-    entity: button.eonromania_ro345678901234_submit_electricity_index
+    entity: button.eonenergy_ro345678901234_submit_electricity_index
     name: Submit electricity index
     icon: mdi:flash
     tap_action:
@@ -338,14 +323,14 @@ cards:
 type: conditional
 conditions:
   - condition: state
-    entity: sensor.eonromania_ro123456789012_overdue_invoice
+    entity: sensor.eonenergy_ro123456789012_overdue_invoice
     state: "Yes"
 card:
   type: markdown
   content: >-
     ## ⚠️ You have an overdue invoice!
 
-    **Total unpaid:** {{ state_attr('sensor.eonromania_ro123456789012_overdue_invoice', 'Total neachitat') }}
+    **Total unpaid:** {{ state_attr('sensor.eonenergy_ro123456789012_overdue_invoice', 'Total unpaid') }}
 
     Check the details in the Invoices section of the dashboard.
 ```
@@ -356,20 +341,20 @@ card:
 
 ### Check that the devices exist
 
-1. **Settings** → **Devices & Services** → click on **E·ON Energy**
+1. **Settings** → **Devices & Services** → click on **E-ON Energy**
 2. You should see one device per selected contract (e.g., "E-ON Energy (RO123456789012)")
 
 ### Check the sensors
 
 1. **Developer Tools** → **States**
-2. Filter by `eonromania`
+2. Filter by `eonenergy`
 3. You should see the entities with values (e.g., `Yes`, `No`, `6030`, etc.)
 
 ### Check the logs (if something is not working)
 
 1. **Settings** → **System** → **Logs**
-2. Search for messages with `eonromania`
-3. For details, enable debug logging — see DEBUG.md
+2. Search for messages with `eonenergy`
+3. For details, enable debug logging — see [DEBUG.md](DEBUG.md)
 
 ---
 
@@ -383,7 +368,7 @@ card:
 ### Manual
 
 1. **Settings** → **Devices & Services** → E-ON Energy → **Delete**
-2. Delete the `config/custom_components/eonromania/` folder
+2. Delete the `config/custom_components/eonenergy/` folder
 3. Restart Home Assistant
 
 ---
@@ -395,4 +380,4 @@ card:
 - **Attributes appear only when E-ON Energy provides the data.** If an attribute is not visible, it means the API did not return that information — it is not an error.
 - **Index and reading allowed sensors** show data only during the reading period. Otherwise, they display `0` or `No`.
 - **DUO contracts** generate index and reading allowed sensors per subcontract, with entity IDs based on the subcontract code, not the collective code.
-- If you encounter problems, consult DEBUG.md to enable detailed logging.
+- If you encounter problems, consult [DEBUG.md](DEBUG.md) to enable detailed logging.

@@ -79,7 +79,7 @@ def _store_token(hass, username: str, api: EonApiClient) -> None:
 # ConfigFlow
 # ------------------------------------------------------------------
 
-class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class EonEnergyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """ConfigFlow — authentication + MFA (optional) + contract selection."""
 
     VERSION = 3
@@ -372,15 +372,15 @@ class EonRomaniaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
-    ) -> EonRomaniaOptionsFlow:
-        return EonRomaniaOptionsFlow()
+    ) -> EonEnergyOptionsFlow:
+        return EonEnergyOptionsFlow()
 
 
 # ------------------------------------------------------------------
 # OptionsFlow
 # ------------------------------------------------------------------
 
-class EonRomaniaOptionsFlow(config_entries.OptionsFlow):
+class EonEnergyOptionsFlow(config_entries.OptionsFlow):
     """OptionsFlow — modify settings + contract selection."""
 
     def __init__(self) -> None:

@@ -12,10 +12,11 @@ A custom integration for Home Assistant that monitors contract data, consumption
 * **Prosumer Support**: Tracks prosumer invoices and balances (debts and credits).
 * **Dedicated sensors**: Contract data, Invoice balance, Current index, Reading allowed, Overdue invoices, Consumption agreement, and historical archives.
 * **Actionable buttons**: Submit your meter readings directly from Home Assistant using `input_number` entities.
+* **Free and open source**: No license or subscription required.
 
 ## Installation & Setup
 
-Please refer to the Installation and Configuration Guide (SETUP.md) for step-by-step instructions on how to install via HACS and configure the integration.
+Please refer to the [Installation and Configuration Guide](SETUP.md) for step-by-step instructions on how to install via HACS and configure the integration.
 
 ## Prerequisites
 
@@ -26,9 +27,9 @@ Please refer to the Installation and Configuration Guide (SETUP.md) for step-by-
 
 Detailed information is available in the following guides:
 
-* **Setup Guide**: Installation, configuration, and Lovelace dashboard examples.
-* **FAQ**: Frequently asked questions about sensors, missing data, and automation examples.
-* **Debugging Guide**: How to enable detailed logging and troubleshoot API or configuration issues.
+* **[Setup Guide](SETUP.md)**: Installation, configuration, and Lovelace dashboard examples.
+* **[FAQ](FAQ.md)**: Frequently asked questions about sensors, missing data, and automation examples.
+* **[Debugging Guide](DEBUG.md)**: How to enable detailed logging and troubleshoot API or configuration issues.
 
 ## License
 

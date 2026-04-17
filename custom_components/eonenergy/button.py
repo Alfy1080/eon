@@ -10,7 +10,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .coordinator import EonRomaniaCoordinator
+from .coordinator import EonEnergyCoordinator
 from .helpers import (
     UTILITY_BUTTON_CONFIG,
     detect_utility_type_individual,
@@ -111,14 +111,14 @@ async def async_setup_entry(
         )
 
 
-class TrimiteIndexButton(CoordinatorEntity[EonRomaniaCoordinator], ButtonEntity):
+class TrimiteIndexButton(CoordinatorEntity[EonEnergyCoordinator], ButtonEntity):
     """Button for submitting meter index — supports both individual and DUO contracts."""
 
     _attr_has_entity_name = False
 
     def __init__(
         self,
-        coordinator: EonRomaniaCoordinator,
+        coordinator: EonEnergyCoordinator,
         config_entry: ConfigEntry,
         account_contract: str,
         utility_type: str,

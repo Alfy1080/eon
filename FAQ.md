@@ -1,101 +1,99 @@
 <a name="top"></a>
-# Întrebări frecvente
+# Frequently Asked Questions
 
-- [Cum adaug integrarea în Home Assistant?](#cum-adaug-integrarea-în-home-assistant)
-- [Am cont DUO. Pot folosi integrarea?](#am-cont-duo-pot-folosi-integrarea)
-- [Ce senzori primesc pentru un contract DUO?](#ce-senzori-primesc-pentru-un-contract-duo)
-- [Ce înseamnă „index curent"?](#ce-înseamnă-index-curent)
-- [Nu îmi apare indexul curent. De ce?](#nu-îmi-apare-indexul-curent-de-ce)
-- [Nu îmi apare senzorul „Citire permisă". De ce?](#nu-îmi-apare-senzorul-citire-permisă-de-ce)
-- [Senzorul „Citire permisă" arată „Nu" deși sunt în perioada de citire. De ce?](#senzorul-citire-permisă-arată-nu-deși-sunt-în-perioada-de-citire-de-ce)
-- [Ce înseamnă senzorul „Factură restantă prosumator"?](#ce-înseamnă-senzorul-factură-restantă-prosumator)
-- [Nu sunt prosumator. Senzorul de prosumator îmi afișează „Nu" — e normal?](#nu-sunt-prosumator-senzorul-de-prosumator-îmi-afișează-nu--e-normal)
-- [Ce înseamnă senzorul „Sold factură"?](#ce-înseamnă-senzorul-sold-factură)
-- [De ce entitățile au un nume lung, cu codul de încasare inclus?](#de-ce-entitățile-au-un-nume-lung-cu-codul-de-încasare-inclus)
-- [Pot monitoriza mai multe contracte simultan?](#pot-monitoriza-mai-multe-contracte-simultan)
-- [Vreau să trimit indexul automat. De ce am nevoie?](#vreau-să-trimit-indexul-automat-de-ce-am-nevoie)
-- [Am un cititor de contor gaz. Cum fac automatizarea?](#am-un-cititor-de-contor-gaz-cum-fac-automatizarea)
-- [De ce valorile sunt afișate cu punct și virgulă (1.234,56)?](#de-ce-valorile-sunt-afișate-cu-punct-și-virgulă-123456)
-- [Am schimbat opțiunile integrării. Trebuie să restartez?](#am-schimbat-opțiunile-integrării-trebuie-să-restartez)
-- [Trebuie să șterg și readaug integrarea la actualizare?](#trebuie-să-șterg-și-readaug-integrarea-la-actualizare)
-- [Ce e licența și de ce am nevoie de ea?](#ce-e-licența-și-de-ce-am-nevoie-de-ea)
-- [Am introdus licența dar senzorii tot arată „Licență necesară". De ce?](#am-introdus-licența-dar-senzorii-tot-arată-licență-necesară-de-ce)
-- [Îmi place proiectul. Cum pot să-l susțin?](#îmi-place-proiectul-cum-pot-să-l-susțin)
+- [How do I add the integration to Home Assistant?](#how-do-i-add-the-integration-to-home-assistant)
+- [I have a DUO account. Can I use the integration?](#i-have-a-duo-account-can-i-use-the-integration)
+- [What sensors do I get for a DUO contract?](#what-sensors-do-i-get-for-a-duo-contract)
+- [What does "current index" mean?](#what-does-current-index-mean)
+- [The current index is not showing. Why?](#the-current-index-is-not-showing-why)
+- [The "Reading allowed" sensor is not showing. Why?](#the-reading-allowed-sensor-is-not-showing-why)
+- [The "Reading allowed" sensor shows "No" even though I'm in the reading period. Why?](#the-reading-allowed-sensor-shows-no-even-though-im-in-the-reading-period-why)
+- [What does the "Prosumer invoice" sensor mean?](#what-does-the-prosumer-invoice-sensor-mean)
+- [I'm not a prosumer. The prosumer sensor shows "No" — is that normal?](#im-not-a-prosumer-the-prosumer-sensor-shows-no--is-that-normal)
+- [What does the "Invoice balance" sensor mean?](#what-does-the-invoice-balance-sensor-mean)
+- [Why do entities have a long name with the billing code included?](#why-do-entities-have-a-long-name-with-the-billing-code-included)
+- [Can I monitor multiple contracts simultaneously?](#can-i-monitor-multiple-contracts-simultaneously)
+- [I want to submit the index automatically. What do I need?](#i-want-to-submit-the-index-automatically-what-do-i-need)
+- [I have a gas meter reader. How do I set up the automation?](#i-have-a-gas-meter-reader-how-do-i-set-up-the-automation)
+- [Why are values displayed with dots and commas (1.234,56)?](#why-are-values-displayed-with-dots-and-commas-123456)
+- [I changed the integration options. Do I need to restart?](#i-changed-the-integration-options-do-i-need-to-restart)
+- [Do I need to delete and re-add the integration when updating?](#do-i-need-to-delete-and-re-add-the-integration-when-updating)
+- [I like the project. How can I support it?](#i-like-the-project-how-can-i-support-it)
 
 ---
 
-## Cum adaug integrarea în Home Assistant?
+## How do I add the integration to Home Assistant?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-Ai nevoie de HACS (Home Assistant Community Store) instalat. Dacă nu-l ai, urmează [ghidul oficial HACS](https://hacs.xyz/docs/use).
+You need HACS (Home Assistant Community Store) installed. If you don't have it, follow the [official HACS guide](https://hacs.xyz/docs/use).
 
-1. În Home Assistant, mergi la **HACS** → cele **trei puncte** din dreapta sus → **Custom repositories**.
-2. Introdu URL-ul: `https://github.com/Alfy1080/eon` și selectează tipul **Integration**.
-3. Apasă **Add**, apoi caută **E-ON Energy** în HACS și instalează.
-4. Repornește Home Assistant.
-5. Mergi la **Setări** → **Dispozitive și Servicii** → **Adaugă Integrare** → caută **E-ON Energy** și urmează pașii de configurare.
+1. In Home Assistant, go to **HACS** → the **three dots** in the top right → **Custom repositories**.
+2. Enter the URL: `https://github.com/Alfy1080/eon` and select the type **Integration**.
+3. Click **Add**, then search for **E-ON Energy** in HACS and install.
+4. Restart Home Assistant.
+5. Go to **Settings** → **Devices & Services** → **Add Integration** → search for **E-ON Energy** and follow the configuration steps.
 
-Detalii complete în [SETUP.md](./SETUP.md).
-
----
-
-## Am cont DUO. Pot folosi integrarea?
-
-[↑ Înapoi la cuprins](#top)
-
-Da. Integrarea detectează automat contractele colective/DUO și le tratează corespunzător.
-
-Iată cum procedezi:
-
-1. Adaugă integrarea cu email-ul și parola contului E-ON Myline.
-2. La pasul 2 (selectare contracte), vei vedea toate contractele cu adresele complete — inclusiv contractul DUO etichetat cu `(Colectiv/DUO)`.
-3. Selectează-l.
-
-Integrarea va:
-- Descoperi automat subcontractele (gaz + electricitate) prin endpoint-ul `account-contracts/list`
-- Obține detalii, index contor, și convenție consum **per subcontract**, în paralel
-- Crea senzori dedicați per subcontract (Index gaz, Index energie electrică, Citire permisă gaz, Citire permisă electricitate)
-- Afișa în Date contract toate detaliile DUO: subcontracte, prețuri, OD, NLC, POD, citiri contor
+Full details in [SETUP.md](./SETUP.md).
 
 ---
 
-## Ce senzori primesc pentru un contract DUO?
+## I have a DUO account. Can I use the integration?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-Un contract DUO generează:
+Yes. The integration automatically detects collective/DUO contracts and handles them accordingly.
 
-**Senzori de bază** (pe contractul colectiv):
-- Date contract — cu atribute detaliate per subcontract (gaz + electricitate)
-- Sold factură, Sold prosumator, Factură restantă, Factură prosumator
-- Convenție consum — cu valori lunare per utilitate (gaz separat, electricitate separat)
+Here's how:
 
-**Senzori per subcontract** (pe codurile individuale de gaz și electricitate):
-- Index gaz / Index energie electrică — valoarea indexului per subcontract
-- Citire permisă gaz / Citire permisă electricitate — starea perioadei de citire per subcontract
+1. Add the integration with your E-ON Myline account email and password.
+2. At step 2 (contract selection), you will see all contracts with complete addresses — including the DUO contract labeled with `(Collective/DUO)`.
+3. Select it.
 
-Entity ID-urile senzorilor per subcontract folosesc codul subcontractului, nu codul colectiv. Exemplu: `sensor.eonromania_002100234567_index_gaz`.
-
----
-
-## Ce înseamnă „index curent"?
-
-[↑ Înapoi la cuprins](#top)
-
-E ultima valoare citită sau transmisă a contorului — fie de distribuitor, fie de tine (autocitire), fie estimată de E-ON Energy. Termenul e generic și se aplică atât pentru gaz, cât și pentru energie electrică.
-
-În integrare, senzorul se numește **„Index gaz"** sau **„Index energie electrică"**, în funcție de tipul contractului detectat automat.
+The integration will:
+- Automatically discover subcontracts (gas + electricity) via the `account-contracts/list` endpoint
+- Fetch details, meter index, and consumption convention **per subcontract**, in parallel
+- Create dedicated sensors per subcontract (Gas index, Electricity index, Gas reading allowed, Electricity reading allowed)
+- Display all DUO details in Contract Data: subcontracts, prices, OD, NLC, POD, meter readings
 
 ---
 
-## Nu îmi apare indexul curent. De ce?
+## What sensors do I get for a DUO contract?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-E normal. Indexul curent apare **doar în perioada de citire** (de obicei câteva zile pe lună). Când nu ești în perioada de citire, API-ul E-ON Energy returnează o listă goală de dispozitive, deci integrarea nu are de unde să extragă date.
+A DUO contract generates:
 
-Concret, în afara perioadei de citire, răspunsul API arată cam așa:
+**Base sensors** (on the collective contract):
+- Contract data — with detailed attributes per subcontract (gas + electricity)
+- Invoice balance, Prosumer balance, Overdue invoice, Prosumer invoice
+- Consumption agreement — with monthly values per utility (gas separate, electricity separate)
+
+**Per-subcontract sensors** (on the individual gas and electricity codes):
+- Gas index / Electricity index — the index value per subcontract
+- Gas reading allowed / Electricity reading allowed — the reading period status per subcontract
+
+Entity IDs for per-subcontract sensors use the subcontract code, not the collective code. Example: `sensor.eonenergy_002100234567_gas_index`.
+
+---
+
+## What does "current index" mean?
+
+[↑ Back to top](#top)
+
+It's the last read or submitted meter value — either by the distributor, by you (self-reading), or estimated by E-ON Energy. The term is generic and applies to both gas and electricity.
+
+In the integration, the sensor is named **"Gas index"** or **"Electricity index"**, depending on the automatically detected contract type.
+
+---
+
+## The current index is not showing. Why?
+
+[↑ Back to top](#top)
+
+This is normal. The current index appears **only during the reading period** (usually a few days per month). When you are not in the reading period, the E-ON API returns an empty device list, so the integration has no data to extract.
+
+Specifically, outside the reading period, the API response looks like this:
 ```json
 {
     "readingPeriod": {
@@ -110,135 +108,135 @@ Concret, în afara perioadei de citire, răspunsul API arată cam așa:
 }
 ```
 
-Când vine perioada de citire, `devices` se populează cu datele contorului și senzorul își afișează valorile. Nu e nicio problemă cu integrarea — pur și simplu E·ON nu publică aceste date în afara perioadei de citire.
+When the reading period arrives, `devices` is populated with meter data and the sensor displays its values. There is no issue with the integration — E-ON simply does not publish this data outside the reading period.
 
-**Notă importantă:** Senzorii de index și citire permisă sunt creați la pornirea integrării. Dacă integrarea a fost pornită în afara perioadei de citire, senzorii vor exista dar vor afișa `0` (index) sau `Nu` (citire permisă). Datele se vor popula automat când începe perioada de citire, fără a fi necesar un restart.
-
----
-
-## Nu îmi apare senzorul „Citire permisă". De ce?
-
-[↑ Înapoi la cuprins](#top)
-
-Același motiv ca la indexul curent — senzorul „Citire permisă" depinde de aceleași date din API. Dacă nu ești în perioada de citire, senzorul va afișa **Nu** sau nu va avea date disponibile. Consultă secțiunea [Nu îmi apare indexul curent](#nu-îmi-apare-indexul-curent-de-ce) pentru detalii.
+**Important note:** Index and reading allowed sensors are created when the integration starts. If the integration was started outside the reading period, the sensors will exist but will show `0` (index) or `No` (reading allowed). Data will populate automatically when the reading period begins, without requiring a restart.
 
 ---
 
-## Senzorul „Citire permisă" arată „Nu" deși sunt în perioada de citire. De ce?
+## The "Reading allowed" sensor is not showing. Why?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-Acest lucru a fost corectat în versiunea curentă. Senzorul folosește acum indicatorul `readingPeriod.inPeriod` direct de la API (cel mai fiabil), cu fallback pe `readingPeriod.allowedReading` și apoi pe calculul manual cu `startDate` / `endDate`.
-
-Dacă senzorul tot arată „Nu" deși ești în perioada de citire:
-1. Verifică atributele secundare ale senzorului — ar trebui să vezi „În perioadă de citire: Da" și „Citire autorizată: Da"
-2. Dacă atributele lipsesc, API-ul E·ON nu furnizează date pentru acel contract — posibil contract inactiv
-3. Activează debug logging ([DEBUG.md](DEBUG.md)) și verifică răspunsul endpoint-ului `meter_index`
+Same reason as the current index — the "Reading allowed" sensor depends on the same API data. If you are not in the reading period, the sensor will show **No** or have no available data. See the section [The current index is not showing](#the-current-index-is-not-showing-why) for details.
 
 ---
 
-## Ce înseamnă senzorul „Factură restantă prosumator"?
+## The "Reading allowed" sensor shows "No" even though I'm in the reading period. Why?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-Acest senzor monitorizează facturile asociate contractului de **prosumator** (persoane care au panouri fotovoltaice sau alte surse de producție și sunt conectate la rețea).
+This was corrected in the current version. The sensor now uses the `readingPeriod.inPeriod` indicator directly from the API (most reliable), with fallback to `readingPeriod.allowedReading` and then to manual calculation with `startDate` / `endDate`.
 
-Entity ID-ul acestui senzor este `sensor.eonromania_{cod}_factura_prosumator`.
-
-Diferența față de senzorul normal „Factură restantă":
-- **Factură restantă** — arată doar dacă ai datorii pe contul de consum obișnuit.
-- **Factură restantă prosumator** — arată atât **datoriile**, cât și **creditele** din contractul de prosumator. Dacă ai produs mai mult decât ai consumat, vei vedea un credit. Senzorul afișează și informații despre soldul global, disponibilitatea rambursării și dacă o rambursare este în curs.
-
----
-
-## Nu sunt prosumator. Senzorul de prosumator îmi afișează „Nu" — e normal?
-
-[↑ Înapoi la cuprins](#top)
-
-Absolut normal. Dacă nu ai contract de prosumator, API-ul E·ON nu returnează date pentru acest endpoint, iar senzorul va afișa **Nu** cu atributul „Nu există facturi disponibile". Poți să-l ignori sau să-l ascunzi din dashboard.
+If the sensor still shows "No" even though you are in the reading period:
+1. Check the secondary attributes of the sensor — you should see "In reading period: Yes" and "Reading authorized: Yes"
+2. If the attributes are missing, the E-ON API is not providing data for that contract — possibly an inactive contract
+3. Enable debug logging ([DEBUG.md](DEBUG.md)) and check the response from the `meter_index` endpoint
 
 ---
 
-## Ce înseamnă senzorul „Sold factură"?
+## What does the "Prosumer invoice" sensor mean?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-Senzorul „Sold factură" (`sensor.eonromania_{cod}_sold_factura`) indică dacă ai un sold de plată activ:
+This sensor monitors invoices associated with a **prosumer** contract (people who have solar panels or other generation sources and are connected to the grid).
 
-- **Da** — ai o sumă de plată (datorie). Verifică atributele pentru detalii.
-- **Nu** — nu ai sold de plată (zero sau credit).
+The entity ID for this sensor is `sensor.eonenergy_{code}_prosumer_invoice`.
 
-Atributele sunt traduse automat din API în română:
-
-- **Sold** — suma totală de plată sau credit (format românesc: 1.234,56 lei)
-- **Sold de plată** — Da/Nu (indică dacă ai de plătit)
-- **Rambursare disponibilă** — Da/Nu (dacă poți solicita rambursare)
-- **Garanție activă** — Da/Nu
-- **Data sold** — data la care a fost calculat soldul
-
-Valorile booleene (true/false) sunt traduse automat în Da/Nu, iar sumele sunt afișate în format românesc.
+The difference from the normal "Overdue invoice" sensor:
+- **Overdue invoice** — shows only if you have debts on your regular consumption account.
+- **Prosumer invoice** — shows both **debts** and **credits** from the prosumer contract. If you produced more than you consumed, you will see a credit. The sensor also displays information about the overall balance, refund availability, and whether a refund is in progress.
 
 ---
 
-## De ce entitățile au un nume lung, cu codul de încasare inclus?
+## I'm not a prosumer. The prosumer sensor shows "No" — is that normal?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-Integrarea setează manual `entity_id`-ul fiecărei entități, incluzând codul de încasare și tipul contractului. Formatul general este:
-
-- `sensor.eonromania_{cod_incasare}_{tip_senzor}`
-- `button.eonromania_{cod_incasare}_{tip_buton}`
-
-De exemplu, pentru un contract de gaz cu codul `004412345678`:
-- `sensor.eonromania_004412345678_index_gaz`
-- `sensor.eonromania_004412345678_date_contract`
-- `sensor.eonromania_004412345678_sold_factura`
-- `button.eonromania_004412345678_trimite_index_gaz`
-
-Avantajul principal: dacă ai mai multe contracte monitorizate simultan, fiecare entitate are un ID unic, fără conflicte.
+Absolutely normal. If you don't have a prosumer contract, the E-ON API does not return data for this endpoint, and the sensor will show **No** with the attribute "No invoices available". You can ignore it or hide it from your dashboard.
 
 ---
 
-## Pot monitoriza mai multe contracte simultan?
+## What does the "Invoice balance" sensor mean?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-Da. Integrarea suportă **multi-contract**. Un singur cont E·ON poate monitoriza oricâte coduri de încasare dorești, inclusiv contracte DUO.
+The "Invoice balance" sensor (`sensor.eonenergy_{code}_invoice_balance`) indicates whether you have an active payment balance:
 
-La pasul de configurare, selectezi contractele dorite (sau le selectezi pe toate). Fiecare contract generează un device separat cu senzorii proprii, iar datele se actualizează în paralel.
+- **Yes** — you have an amount to pay (debt). Check the attributes for details.
+- **No** — you have no payment balance (zero or credit).
 
----
+The attributes include:
 
-## Vreau să trimit indexul automat. De ce am nevoie?
+- **Balance** — the total amount to pay or credit (Romanian format: 1.234,56 lei)
+- **Payment balance** — Yes/No (indicates if you need to pay)
+- **Refund available** — Yes/No (if you can request a refund)
+- **Active guarantee** — Yes/No
+- **Balance date** — the date the balance was calculated
 
-[↑ Înapoi la cuprins](#top)
-
-Două lucruri:
-
-**1. Hardware pe contor** — Un senzor capabil să citească impulsurile contorului (contact reed / magnetic, de regulă). Trebuie să fie compatibil cu contorul tău și să nu necesite modificări permanente ale acestuia. Senzorul trimite impulsurile către Home Assistant, unde sunt convertite într-o valoare numerică stocată în `input_number`.
-
-**2. Integrarea configurată** — Butoanele de trimitere index din integrare citesc valoarea din `input_number` corespunzător și o trimit către API-ul E·ON:
-
-- **Gaz**: butonul `Trimite index gaz` (`button.eonromania_{cod}_trimite_index_gaz`) citește din `input_number.gas_meter_reading`
-- **Electricitate**: butonul `Trimite index energie electrică` (`button.eonromania_{cod}_trimite_index_energie_electrica`) citește din `input_number.energy_meter_reading`
-
-La contractele DUO, ambele butoane sunt create automat (câte unul per subcontract). La contractele individuale, apare un singur buton corespunzător tipului de utilitate.
-
-> **Atenție:** Butoanele caută exact entitățile `input_number.gas_meter_reading` și/sau `input_number.energy_meter_reading`. Dacă acestea nu există sau au valori invalide, trimiterea va eșua. Verifică în loguri dacă întâmpini probleme.
+Boolean values (true/false) are automatically translated to Yes/No, and amounts are displayed in Romanian format.
 
 ---
 
-## Am un cititor de contor gaz. Cum fac automatizarea?
+## Why do entities have a long name with the billing code included?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-Dacă ai hardware-ul instalat și valoarea se actualizează în `input_number.gas_meter_reading`, poți folosi o automatizare ca aceasta:
+The integration manually sets the `entity_id` for each entity, including the billing code and contract type. The general format is:
+
+- `sensor.eonenergy_{billing_code}_{sensor_type}`
+- `button.eonenergy_{billing_code}_{button_type}`
+
+For example, for a gas contract with code `004412345678`:
+- `sensor.eonenergy_004412345678_gas_index`
+- `sensor.eonenergy_004412345678_contract_data`
+- `sensor.eonenergy_004412345678_invoice_balance`
+- `button.eonenergy_004412345678_submit_gas_index`
+
+The main advantage: if you have multiple contracts monitored simultaneously, each entity has a unique ID without conflicts.
+
+---
+
+## Can I monitor multiple contracts simultaneously?
+
+[↑ Back to top](#top)
+
+Yes. The integration supports **multi-contract**. A single E-ON account can monitor as many billing codes as you want, including DUO contracts.
+
+During the configuration step, you select the desired contracts (or select all). Each contract generates a separate device with its own sensors, and data is updated in parallel.
+
+---
+
+## I want to submit the index automatically. What do I need?
+
+[↑ Back to top](#top)
+
+Two things:
+
+**1. Hardware on the meter** — A sensor capable of reading meter pulses (reed / magnetic contact, typically). It must be compatible with your meter and not require permanent modifications. The sensor sends pulses to Home Assistant, where they are converted into a numeric value stored in `input_number`.
+
+**2. Integration configured** — The index submission buttons in the integration read the value from the corresponding `input_number` and send it to the E-ON API:
+
+- **Gas**: the button `Submit gas index` (`button.eonenergy_{code}_submit_gas_index`) reads from `input_number.gas_meter_reading`
+- **Electricity**: the button `Submit electricity index` (`button.eonenergy_{code}_submit_electricity_index`) reads from `input_number.energy_meter_reading`
+
+For DUO contracts, both buttons are created automatically (one per subcontract). For individual contracts, only one button appears corresponding to the utility type.
+
+> **Note:** The buttons look for exactly the entities `input_number.gas_meter_reading` and/or `input_number.energy_meter_reading`. If these don't exist or have invalid values, the submission will fail. Check the logs if you encounter problems.
+
+---
+
+## I have a gas meter reader. How do I set up the automation?
+
+[↑ Back to top](#top)
+
+If you have the hardware installed and the value is updated in `input_number.gas_meter_reading`, you can use an automation like this:
 
 ```yaml
-alias: "GAZ: Transmitere index automat"
+alias: "GAS: Automatic index submission"
 description: >-
-  Trimite o notificare dimineața și apasă butonul de trimitere index la prânz,
-  în ziua 9 a fiecărei luni.
+  Sends a notification in the morning and presses the submit button at noon,
+  on the 9th day of each month.
 triggers:
   - trigger: time
     at: "09:00:00"
@@ -249,102 +247,71 @@ conditions:
     value_template: "{{ now().day == 9 }}"
 actions:
   - choose:
-      - alias: "Notificare la ora 09:00"
+      - alias: "Notification at 09:00"
         conditions:
           - condition: template
             value_template: "{{ trigger.now.hour == 9 }}"
         sequence:
-          - action: notify.mobile_app_telefonul_meu
+          - action: notify.mobile_app_my_phone
             data:
-              title: "E·ON GAZ — Index de transmis"
+              title: "E-ON GAS — Index to submit"
               message: >-
-                Noul index pentru luna curentă este de
+                The new index for the current month is
                 {{ states('input_number.gas_meter_reading') | float | round(0) | int }}.
-      - alias: "Trimitere index la ora 12:00"
+      - alias: "Submit index at 12:00"
         conditions:
           - condition: template
             value_template: "{{ trigger.now.hour == 12 }}"
         sequence:
           - action: button.press
             target:
-              entity_id: button.eonromania_004412345678_trimite_index_gaz
+              entity_id: button.eonenergy_004412345678_submit_gas_index
 ```
 
-**Ce face:**
-- În **ziua 9** a fiecărei luni, la **09:00**, primești o notificare cu indexul curent.
-- La **12:00**, integrarea trimite automat indexul către E·ON.
+**What it does:**
+- On the **9th day** of each month, at **09:00**, you receive a notification with the current index.
+- At **12:00**, the integration automatically submits the index to E-ON.
 
-> **⚠️ Important:** Înlocuiește `004412345678` cu codul tău real de încasare (12 cifre) și `notify.mobile_app_telefonul_meu` cu entity_id-ul serviciului tău de notificare. Entity_id-urile exacte le găsești în **Setări** → **Dispozitive și Servicii** → **E·ON România**.
-
----
-
-## De ce valorile sunt afișate cu punct și virgulă (1.234,56)?
-
-[↑ Înapoi la cuprins](#top)
-
-Integrarea folosește formatul numeric românesc: punctul separă miile, virgula separă zecimalele. Exemplu: **1.234,56 lei** înseamnă o mie două sute treizeci și patru de lei și cincizeci și șase de bani. E formatul standard folosit în România.
-
-De asemenea, în senzorul „Arhivă consum", valorile de consum și mediu zilnic folosesc virgula ca separator zecimal (ex: **4,029 m³** în loc de **4.029 m³**), pentru a evita confuzia cu separatorul de mii.
+> **⚠️ Important:** Replace `004412345678` with your real billing code (12 digits) and `notify.mobile_app_my_phone` with your notification service entity_id. You can find exact entity_ids in **Settings** → **Devices & Services** → **E-ON Energy**.
 
 ---
 
-## Am schimbat opțiunile integrării. Trebuie să restartez?
+## Why are values displayed with dots and commas (1.234,56)?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-Nu. Integrarea se reîncarcă automat când salvezi modificările din fluxul de opțiuni. Nu este necesar un restart manual al Home Assistant.
+The integration uses Romanian numeric format: the dot separates thousands, the comma separates decimals. Example: **1.234,56 lei** means one thousand two hundred thirty-four lei and fifty-six bani. This is the standard format used in Romania.
 
-De asemenea, dacă modifici credențialele (username, parolă) din opțiuni, integrarea validează autentificarea înainte de a salva — dacă noile date sunt greșite, vei primi o eroare și configurația existentă rămâne neschimbată.
-
----
-
-## Trebuie să șterg și readaug integrarea la actualizare?
-
-[↑ Înapoi la cuprins](#top)
-
-De regulă nu. Setările sunt stocate în baza de date HA, nu în fișiere. Actualizarea suprascrie doar codul.
-
-**Excepție v3.0.0:** Dacă actualizezi de la v1/v2 la v3, integrarea include migrare automată care convertește formatul vechi (un singur cod de încasare) în formatul nou (listă de contracte). Nu trebuie să faci nimic manual. Dacă totuși apar probleme, șterge integrarea și readaug-o.
+Also, in the "Consumption archive" sensor, consumption and daily average values use the comma as a decimal separator (e.g., **4,029 m³** instead of **4.029 m³**), to avoid confusion with the thousands separator.
 
 ---
 
-## Ce e licența și de ce am nevoie de ea?
+## I changed the integration options. Do I need to restart?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-Integrarea folosește un sistem de licențiere server-side (v3.3) cu semnături Ed25519 și HMAC-SHA256. Fără o licență validă, integrarea afișează doar senzorul „Licență necesară" și nu creează senzori sau butoane funcționale.
+No. The integration automatically reloads when you save changes from the options flow. A manual restart of Home Assistant is not necessary.
 
-Licența se achiziționează de la: [licensing-server.com/donate?ref=eonromania](https://licensing-server.com/donate?ref=eonromania)
-
-După achiziție, introdu cheia de licență din OptionsFlow:
-1. **Setări** → **Dispozitive și Servicii** → **E·ON România** → **Configurare**
-2. Selectează **Licență**
-3. Completează câmpul „Cheie licență"
-4. Salvează
+Also, if you modify the credentials (username, password) from the options, the integration validates authentication before saving — if the new data is incorrect, you will receive an error and the existing configuration remains unchanged.
 
 ---
 
-## Am introdus licența dar senzorii tot arată „Licență necesară". De ce?
+## Do I need to delete and re-add the integration when updating?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-Câteva cauze posibile:
+Generally no. Settings are stored in the HA database, not in files. The update only overwrites the code.
 
-1. **Licența nu a fost validată** — verifică logurile pentru mesaje cu `LICENSE`
-2. **Serverul de licențe nu este accesibil** — dacă HA nu are acces la internet, validarea eșuează
-3. **Cheie greșită** — verifică că ai copiat cheia corect, fără spații suplimentare
-4. **Restartare necesară** — în rare cazuri, un restart al HA poate rezolva problema
-
-Activează debug logging ([DEBUG.md](DEBUG.md)) și caută mesaje legate de licență.
+**Exception v3.0.0:** If you update from v1/v2 to v3, the integration includes automatic migration that converts the old format (a single billing code) to the new format (list of contracts). You don't need to do anything manually. If issues arise, delete the integration and re-add it.
 
 ---
 
-## Îmi place proiectul. Cum pot să-l susțin?
+## I like the project. How can I support it?
 
-[↑ Înapoi la cuprins](#top)
+[↑ Back to top](#top)
 
-- ⭐ Oferă un **star** pe [GitHub](https://github.com/Alfy1080/eon/)
-- 🐛 **Raportează probleme** — deschide un [issue](https://github.com/Alfy1080/eon/issues)
-- 🔀 **Contribuie cu cod** — trimite un pull request
-- ☕ **Donează** prin [Buy Me a Coffee](https://buymeacoffee.com/Alfy1080)
-- 📢 **Distribuie** proiectul prietenilor sau comunității tale
+- ⭐ Give a **star** on [GitHub](https://github.com/Alfy1080/eon/)
+- 🐛 **Report issues** — open an [issue](https://github.com/Alfy1080/eon/issues)
+- 🔀 **Contribute code** — submit a pull request
+- ☕ **Donate** via [Buy Me a Coffee](https://buymeacoffee.com/Alfy1080)
+- 📢 **Share** the project with friends or your community

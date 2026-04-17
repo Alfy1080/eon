@@ -15,7 +15,7 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .const import DOMAIN, DEFAULT_UPDATE_INTERVAL, DOMAIN_TOKEN_STORE, PLATFORMS
 from .api import EonApiClient
-from .coordinator import EonRomaniaCoordinator
+from .coordinator import EonEnergyCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,10 +23,10 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 @dataclass
-class EonRomaniaRuntimeData:
+class EonEnergyRuntimeData:
     """Typed structure for the integration's runtime data."""
 
-    coordinators: dict[str, EonRomaniaCoordinator] = field(default_factory=dict)
+    coordinators: dict[str, EonEnergyCoordinator] = field(default_factory=dict)
     api_client: EonApiClient | None = None
 
 
@@ -114,7 +114,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         # Dismiss re-authentication notification (if exists)
         for contract in selected_contracts:
             persistent_notification.async_dismiss(
-                hass, f"eonromania_reauth_{contract}"
+                hass, f"eonenergy_reauth_{contract}"
             )
     elif entry.data.get("token_data"):
         api_client.inject_token(entry.data["token_data"])
@@ -135,11 +135,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     contract_metadata = entry.data.get("contract_metadata", {})
 
     # Create one coordinator per selected contract
-    coordinators: dict[str, EonRomaniaCoordinator] = {}
+    coordinators: dict[str, EonEnergyCoordinator] = {}
 
     if is_account_only:
         # Account without contracts — single coordinator for personal data
-        coordinator = EonRomaniaCoordinator(
+        coordinator = EonEnergyCoordinator(
             hass,
             api_client=api_client,
             cod_incasare="__account__",
@@ -170,7 +170,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             meta = contract_metadata.get(cod, {})
             is_collective = meta.get("is_collective", False)
 
-            coordinator = EonRomaniaCoordinator(
+            coordinator = EonEnergyCoordinator(
                 hass,
                 api_client=api_client,
                 cod_incasare=cod,
@@ -210,7 +210,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
 
     # Save runtime data
-    entry.runtime_data = EonRomaniaRuntimeData(
+    entry.runtime_data = EonEnergyRuntimeData(
         coordinators=coordinators,
         api_client=api_client,
     )
@@ -240,12 +240,12 @@ async def _async_update_options(hass: HomeAssistant, entry: ConfigEntry):
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload an entry from config_entries."""
     _LOGGER.info(
-        "[EonRomania] ── async_unload_entry ── entry_id=%s",
+        "[EonEnergy] ── async_unload_entry ── entry_id=%s",
         entry.entry_id,
     )
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    _LOGGER.debug("[EonRomania] Unload platforms: %s", "OK" if unload_ok else "FAILED")
+    _LOGGER.debug("[EonEnergy] Unload platforms: %s", "OK" if unload_ok else "FAILED")
 
     if unload_ok:
         # runtime_data is cleaned up automatically by HA at unload — no manual pop needed
@@ -256,21 +256,21 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         remaining_entry_ids = {e.entry_id for e in remaining_entries if e.entry_id != entry.entry_id}
 
         _LOGGER.debug(
-            "[EonRomania] Remaining entries after unload: %d (%s)",
+            "[EonEnergy] Remaining entries after unload: %d (%s)",
             len(remaining_entry_ids),
             remaining_entry_ids or "none",
         )
 
         if not remaining_entry_ids:
-            _LOGGER.info("[EonRomania] Last entry unloaded — cleaning up domain completely")
+            _LOGGER.info("[EonEnergy] Last entry unloaded — cleaning up domain completely")
 
             # Remove domain completely
             hass.data.pop(DOMAIN, None)
-            _LOGGER.debug("[EonRomania] hass.data[%s] removed completely", DOMAIN)
+            _LOGGER.debug("[EonEnergy] hass.data[%s] removed completely", DOMAIN)
 
-            _LOGGER.info("[EonRomania] Cleanup complete — domain %s unloaded", DOMAIN)
+            _LOGGER.info("[EonEnergy] Cleanup complete — domain %s unloaded", DOMAIN)
     else:
-        _LOGGER.error("[EonRomania] Unload FAILED for entry_id=%s", entry.entry_id)
+        _LOGGER.error("[EonEnergy] Unload FAILED for entry_id=%s", entry.entry_id)
 
     return unload_ok
 

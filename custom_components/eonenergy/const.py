@@ -2,7 +2,7 @@
 
 from homeassistant.const import Platform
 
-DOMAIN = "eonromania"
+DOMAIN = "eonenergy"
 DOMAIN_TOKEN_STORE = f"{DOMAIN}_token_store"  # Key in hass.data for MFA tokens
 
 # ──────────────────────────────────────────────
