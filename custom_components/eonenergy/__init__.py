@@ -53,11 +53,12 @@ async def _handle_setup_failure(hass: HomeAssistant, entry: ConfigEntry) -> bool
             )
             await hass.config_entries.async_reload(entry.entry_id)
 
-        async_track_point_in_time(
+        cancel_reload = async_track_point_in_time(
             hass,
             _auto_reload_entry,
             dt_util.utcnow() + timedelta(minutes=reload_interval_min),
         )
+        entry.async_on_unload(cancel_reload)
         # Return True to prevent HA's backoff mechanism, as we are handling it.
         # The entry will be in a loaded state but without devices until reload.
         return True
